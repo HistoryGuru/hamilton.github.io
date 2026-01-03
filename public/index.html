@@ -142,29 +142,28 @@ async function callAI(system, user, maxTokens = 1200) {
 
         console.log("Puter AI Response:", response);
 
-        // Extract text from Puter's response object
+        // Extract text from Puter's response - the actual content is in message.content
+        if (response.message && response.message.content) {
+            // Content is an array with text blocks
+            if (Array.isArray(response.message.content)) {
+                return response.message.content
+                    .filter(block => block.type === 'text')
+                    .map(block => block.text)
+                    .join('\n');
+            }
+            return response.message.content;
+        }
+        
+        // Fallback to other possible structures
         if (typeof response === 'string') {
             return response;
         } else if (response.text) {
             return response.text;
-        } else if (response.message) {
-            return response.message;
         } else if (response.content) {
             return response.content;
-        } else if (response.response) {
-            return response.response;
-        } else if (Array.isArray(response) && response[0]) {
-            return response[0].text || response[0].content || String(response[0]);
-        } else {
-            // Try to get any text property from the object
-            const keys = Object.keys(response);
-            for (const key of keys) {
-                if (typeof response[key] === 'string' && response[key].length > 10) {
-                    return response[key];
-                }
-            }
-            return JSON.stringify(response, null, 2);
         }
+        
+        return JSON.stringify(response, null, 2);
     } catch (error) {
         console.error("AI Error:", error);
         throw new Error("AI request failed: " + error.message);
