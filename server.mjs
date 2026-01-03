@@ -19,11 +19,22 @@ app.post("/api/ai", async (req, res) => {
                 body: JSON.stringify(req.body)
             }
         );
-
+        
+        if (!response.ok) {
+            const error = await response.text();
+            throw new Error(`Puter API error: ${error}`);
+        }
+        
         const data = await response.json();
         res.json(data);
     } catch (err) {
+        console.error("Backend error:", err);
         res.status(500).json({ error: err.message });
     }
 });
 
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+```
