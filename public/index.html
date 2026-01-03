@@ -92,24 +92,6 @@
     overflow-y: auto;
     border: 2px solid #fbbf24;
 }
-
-.plan-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px solid #475569;
-    border-radius: 12px;
-    padding: 24px;
-    transition: all 0.3s;
-}
-
-.plan-card:hover {
-    border-color: #fbbf24;
-    transform: translateY(-4px);
-}
-
-.plan-card.selected {
-    border-color: #fbbf24;
-    background: rgba(251, 191, 36, 0.1);
-}
 </style>
 </head>
 
@@ -119,7 +101,7 @@
 <header class="text-center mb-8">
     <h1 class="text-5xl font-bold text-amber-400">Hamilton</h1>
     <p class="text-slate-300">Intelligent Debate Speech Generator</p>
-    <p class="text-slate-400 text-sm mt-2" id="planIndicator">Loading...</p>
+    <p class="text-slate-400 text-sm mt-2" id="planIndicator">Novice Plan (Free)</p>
 </header>
 
 <!-- Tabs -->
@@ -154,8 +136,6 @@
         class="w-full mt-4 bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-3 rounded">
         Generate Counter-Speech
     </button>
-    
-    <p id="counterUsageInfo" class="text-slate-400 text-sm mt-2 text-center"></p>
 </div>
 
 <!-- OUTPUT -->
@@ -213,8 +193,6 @@
         class="w-full mt-4 bg-amber-500 hover:bg-amber-600 py-3 rounded font-semibold text-slate-900">
         Generate Case
     </button>
-    
-    <p id="caseUsageInfo" class="text-slate-400 text-sm mt-2 text-center"></p>
 </div>
 
 <div class="bg-slate-800/50 p-6 rounded border border-slate-700">
@@ -236,11 +214,8 @@
     <div class="modal-content max-w-md">
         <h2 class="text-2xl font-bold text-amber-400 text-center mb-4">Upgrade Required</h2>
         <p class="text-slate-300 text-center mb-6" id="upgradeMessage"></p>
-        <button class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-3 rounded mb-3" onclick="showPaywall()">
-            View Plans & Upgrade
-        </button>
         <button class="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded" onclick="closeUpgradeModal()">
-            Cancel
+            Close
         </button>
     </div>
 </div>
@@ -250,140 +225,24 @@
     <p class="text-slate-400 text-sm">All Code by Leroy Qu</p>
 </footer>
 
-<script type="module">
-import { checkJuniorVarsityStatus, checkVarsityStatus, showSubscriptionPaywall } from "./revenuecat.js";
-
-// User plan and usage tracking
+<script>
+// User plan
 let userPlan = {
-    type: 'novice', // 'novice', 'jv', 'varsity'
-    caseUsageToday: 0,
-    counterUsageToday: 0,
-    lastResetDate: new Date().toDateString()
+    type: 'novice',
+    maxCards: 2
 };
 
-// Initialize app and check subscription status
-async function initApp() {
-    try {
-        // Check subscription tiers
-        const isVarsity = await checkVarsityStatus();
-        const isJV = await checkJuniorVarsityStatus();
-        
-        if (isVarsity) {
-            userPlan.type = 'varsity';
-            document.getElementById('planIndicator').textContent = 'Varsity Plan ($9.99/mo)';
-        } else if (isJV) {
-            userPlan.type = 'jv';
-            document.getElementById('planIndicator').textContent = 'JV Plan ($5.99/mo)';
-        } else {
-            userPlan.type = 'novice';
-            document.getElementById('planIndicator').textContent = 'Novice Plan (Free)';
-        }
-        
-        // Load usage from localStorage
-        loadUsageData();
-        updateUI();
-    } catch (error) {
-        console.error('Error checking subscription status:', error);
-        userPlan.type = 'novice';
-        document.getElementById('planIndicator').textContent = 'Novice Plan (Free)';
-        updateUI();
-    }
-}
-
-// Load usage data from localStorage
-function loadUsageData() {
-    try {
-        const stored = localStorage.getItem('hamiltonUsage');
-        if (stored) {
-            const savedUsage = JSON.parse(stored);
-            // Reset if it's a new day
-            if (savedUsage.lastResetDate !== new Date().toDateString()) {
-                userPlan.caseUsageToday = 0;
-                userPlan.counterUsageToday = 0;
-                userPlan.lastResetDate = new Date().toDateString();
-            } else {
-                userPlan.caseUsageToday = savedUsage.caseUsageToday || 0;
-                userPlan.counterUsageToday = savedUsage.counterUsageToday || 0;
-                userPlan.lastResetDate = savedUsage.lastResetDate;
-            }
-        }
-        saveUsageData();
-    } catch (error) {
-        console.error('Error loading usage data:', error);
-        // Reset to defaults if localStorage is corrupted
-        userPlan.caseUsageToday = 0;
-        userPlan.counterUsageToday = 0;
-        userPlan.lastResetDate = new Date().toDateString();
-    }
-}
-
-function saveUsageData() {
-    try {
-        localStorage.setItem('hamiltonUsage', JSON.stringify({
-            caseUsageToday: userPlan.caseUsageToday,
-            counterUsageToday: userPlan.counterUsageToday,
-            lastResetDate: userPlan.lastResetDate
-        }));
-        updateUI();
-    } catch (error) {
-        console.error('Error saving usage data:', error);
-    }
-}
-
-function updateUI() {
-    const limits = getPlanLimits();
+// Check card limits
+function checkCardLimit() {
+    const cards1 = parseInt(document.getElementById('cardsPerPoint1').value) || 0;
+    const cards2 = parseInt(document.getElementById('cardsPerPoint2').value) || 0;
     
-    // Update usage info
-    if (limits.casesPerDay === Infinity) {
-        document.getElementById('caseUsageInfo').textContent = `Cases used today: ${userPlan.caseUsageToday}`;
-    } else {
-        document.getElementById('caseUsageInfo').textContent = `Cases used: ${userPlan.caseUsageToday}/${limits.casesPerDay} today`;
+    if (cards1 > userPlan.maxCards || cards2 > userPlan.maxCards) {
+        showUpgradeModal(`Your plan allows a maximum of ${userPlan.maxCards} cards per focus point. Upgrade to Varsity for up to 5 cards!`);
+        return false;
     }
-    
-    if (limits.counterPerDay === Infinity) {
-        document.getElementById('counterUsageInfo').textContent = `Counter-speeches used today: ${userPlan.counterUsageToday}`;
-    } else {
-        document.getElementById('counterUsageInfo').textContent = `Counter-speeches used: ${userPlan.counterUsageToday}/${limits.counterPerDay} today`;
-    }
-    
-    // Update card input limits
-    const cards1 = document.getElementById('cardsPerPoint1');
-    const cards2 = document.getElementById('cardsPerPoint2');
-    
-    if (cards1) {
-        cards1.max = limits.maxCards;
-        // Clamp current value to max
-        if (parseInt(cards1.value) > limits.maxCards) {
-            cards1.value = limits.maxCards;
-        }
-    }
-    if (cards2) {
-        cards2.max = limits.maxCards;
-        // Clamp current value to max
-        if (parseInt(cards2.value) > limits.maxCards) {
-            cards2.value = limits.maxCards;
-        }
-    }
+    return true;
 }
-
-function getPlanLimits() {
-    const limits = {
-        'novice': { casesPerDay: 2, counterPerDay: 3, maxCards: 2 },
-        'jv': { casesPerDay: 5, counterPerDay: Infinity, maxCards: 4 },
-        'varsity': { casesPerDay: Infinity, counterPerDay: Infinity, maxCards: 5 }
-    };
-    return limits[userPlan.type] || limits.novice;
-}
-
-// Make showPaywall available globally
-window.showPaywall = function() {
-    try {
-        showSubscriptionPaywall();
-    } catch (error) {
-        console.error('Error showing paywall:', error);
-        alert('Unable to show subscription options. Please try again later.');
-    }
-};
 
 function showUpgradeModal(message) {
     document.getElementById('upgradeMessage').textContent = message;
@@ -393,18 +252,6 @@ function showUpgradeModal(message) {
 window.closeUpgradeModal = function() {
     document.getElementById('upgradeModal').style.display = 'none';
 };
-
-function checkCardLimit() {
-    const limits = getPlanLimits();
-    const cards1 = parseInt(document.getElementById('cardsPerPoint1').value) || 0;
-    const cards2 = parseInt(document.getElementById('cardsPerPoint2').value) || 0;
-    
-    if (cards1 > limits.maxCards || cards2 > limits.maxCards) {
-        showUpgradeModal(`Your plan allows a maximum of ${limits.maxCards} cards per focus point. Upgrade to Varsity for up to 5 cards!`);
-        return false;
-    }
-    return true;
-}
 
 /* =========================================================
    CENTRALIZED AI CALL (PUTER AI)
@@ -456,6 +303,7 @@ document.getElementById('counterTab').onclick = () => {
     document.getElementById('counterTab').className = "px-6 py-3 rounded bg-amber-500 text-slate-900 font-semibold";
     document.getElementById('caseTab').className = "px-6 py-3 rounded bg-slate-800 text-slate-300";
 };
+
 document.getElementById('caseTab').onclick = () => {
     document.getElementById('caseSection').classList.remove("hidden");
     document.getElementById('counterSection').classList.add("hidden");
@@ -484,14 +332,11 @@ document.getElementById('generateCounterBtn').onclick = async () => {
     counterOutput.textContent = "Generating…";
     counterOutput.className = "text-slate-400 italic";
 
-    const prompt = `
-Generate a ${speechLength.value}-minute rebuttal speech
-against the following case:
+    const prompt = `Generate a ${speechLength.value}-minute rebuttal speech against the following case:
 
 ${caseInput.innerText}
 
-Be structured, analytical, and persuasive.
-    `;
+Be structured, analytical, and persuasive.`;
 
     try {
         const text = await callAI(
@@ -501,8 +346,6 @@ Be structured, analytical, and persuasive.
         );
         counterOutput.innerText = text;
         counterOutput.className = "text-slate-100";
-        userPlan.counterUsageToday++;
-        saveUsageData();
     } catch (err) {
         counterOutput.innerText = `Error: ${err.message}`;
         counterOutput.className = "text-red-400";
@@ -513,11 +356,13 @@ Be structured, analytical, and persuasive.
    CASE GENERATOR
    ========================================================= */
 let side = "Aff";
+
 document.getElementById('affBtn').onclick = () => {
     side = "Aff";
     document.getElementById('affBtn').className = "flex-1 bg-amber-500 py-2 rounded font-semibold text-slate-900";
     document.getElementById('negBtn').className = "flex-1 bg-slate-700 py-2 rounded text-slate-300";
 };
+
 document.getElementById('negBtn').onclick = () => {
     side = "Neg";
     document.getElementById('negBtn').className = "flex-1 bg-amber-500 py-2 rounded font-semibold text-slate-900";
@@ -545,13 +390,6 @@ document.getElementById('generateCaseBtn').onclick = async () => {
     
     // Check card limits
     if (!checkCardLimit()) {
-        return;
-    }
-    
-    // Check usage limits
-    const limits = getPlanLimits();
-    if (userPlan.caseUsageToday >= limits.casesPerDay) {
-        showUpgradeModal(`You've reached your daily limit of ${limits.casesPerDay} cases. Upgrade for more!`);
         return;
     }
     
@@ -606,8 +444,6 @@ Generate the complete case with proper HTML formatting.`;
             3000
         );
         caseOutput.innerHTML = text;
-        userPlan.caseUsageToday++;
-        saveUsageData();
     } catch (err) {
         caseOutput.innerHTML = `<p class="text-red-500">Error: ${err.message}</p>`;
     }
@@ -617,8 +453,7 @@ Generate the complete case with proper HTML formatting.`;
 document.getElementById('cardsPerPoint1').onchange = checkCardLimit;
 document.getElementById('cardsPerPoint2').onchange = checkCardLimit;
 
-// Initialize app - CRITICAL: This was missing!
-initApp();
+console.log("Hamilton initialized successfully!");
 </script>
 
 </body>
