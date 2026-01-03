@@ -1,0 +1,156 @@
+<script src="https://js.puter.com/v2/"></script>
+
+<section id="case-writer" style="padding: 20px; border: 1px solid #ccc; margin-top: 20px; font-family: 'Times New Roman', serif;">
+    <h2>Write Me A Case (Powered by AI)</h2>
+    
+    <div class="input-group" style="margin-bottom: 10px;">
+        <label>Topic: </label>
+        <input type="text" id="topicInput" placeholder="We should increase..." style="width: 300px;">
+    </div>
+
+    <div class="input-group" style="margin-bottom: 10px;">
+        <label>Side: </label>
+        <select id="sideInput">
+            <option value="Aff">Affirmative</option>
+            <option value="Neg">Negative</option>
+        </select>
+    </div>
+
+    <div class="input-group" style="margin-bottom: 10px;">
+        <label>Focus Point 1: </label>
+        <input type="text" id="focus1Input" placeholder="Economy">
+    </div>
+
+    <div class="input-group" style="margin-bottom: 10px;">
+        <label>Focus Point 2 (Optional): </label>
+        <input type="text" id="focus2Input" placeholder="Indo Pacific Relations">
+    </div>
+
+    <div class="input-group" style="margin-bottom: 10px;">
+        <label>Amount of Evidence (1-5): </label>
+        <input type="number" id="evidenceCount" min="1" max="5" value="1">
+    </div>
+
+    <button id="genBtn" onclick="generateCase()" style="padding: 10px 20px; cursor: pointer; background-color: #333; color: white; border: none;">Generate Case</button>
+
+    <hr>
+
+    <div id="caseOutput" style="margin-top: 20px;"></div>
+</section>
+
+<script>
+    async function generateCase() {
+        const topic = document.getElementById('topicInput').value;
+        const side = document.getElementById('sideInput').value;
+        const focus1 = document.getElementById('focus1Input').value;
+        const focus2 = document.getElementById('focus2Input').value;
+        const count = parseInt(document.getElementById('evidenceCount').value);
+        const outputDiv = document.getElementById('caseOutput');
+        const btn = document.getElementById('genBtn');
+
+        // Validation
+        if (!topic || !focus1) {
+            alert("Please enter a Topic and at least Focus Point 1.");
+            return;
+        }
+
+        // UI Loading State
+        outputDiv.innerHTML = "<em>Generating case... this may take a few seconds...</em>";
+        btn.disabled = true;
+        btn.innerText = "Generating...";
+
+        const focusPoints = [focus1];
+        if (focus2) focusPoints.push(focus2);
+
+        try {
+            // Loop through each focus point (doing them sequentially to handle API load)
+            outputDiv.innerHTML = ""; // Clear loading text
+            
+            for (const focus of focusPoints) {
+                // Create Header
+                const focusHeader = document.createElement("h3");
+                focusHeader.innerText = `Contention: ${focus}`;
+                focusHeader.style.textDecoration = "underline";
+                outputDiv.appendChild(focusHeader);
+
+                // Construct the Prompt for the AI
+                const prompt = `
+                    You are a debate case writer.
+                    Topic: "${topic}"
+                    Side: ${side}
+                    Focus Point: "${focus}"
+                    
+                    Generate ${count} distinct pieces of evidence (cards).
+                    
+                    STRICT LOGIC:
+                    For each card, follow this logic chain:
+                    1. Claim: A statement connecting the ${side} to the ${focus}.
+                    2. Link: How the specific legislation or action causes this.
+                    3. Impact: The ultimate good/bad result (e.g. War, Economic Collapse).
+
+                    OUTPUT FORMAT:
+                    Return ONLY a raw JSON array. Do not include markdown formatting like \`\`\`json.
+                    The array must contain objects with these keys:
+                    - "tag": The main point (Claim + Impact) formatted as a summary sentence.
+                    - "citation": A fake author and year (e.g., "Smith '24").
+                    - "body": A paragraph (~60 words) simulating an article. You MUST use HTML tags <u><mark> inside this string to highlight the Claim, Link, and Impact sentences. The rest of the text should be normal.
+                `;
+
+                // Call Puter AI
+                // Note: puter.ai.chat returns a response object. We force it to text for parsing.
+                const response = await puter.ai.chat(prompt);
+                
+                // Parse the response (Cleaning up potential markdown wrappers)
+                let cleanJson = response.toString().replace(/```json/g, '').replace(/```/g, '').trim();
+                let cards = [];
+                try {
+                    cards = JSON.parse(cleanJson);
+                } catch (e) {
+                    console.error("JSON Parse Error", e);
+                    outputDiv.innerHTML += `<p style="color:red">Error parsing AI response. Try again.</p>`;
+                    continue;
+                }
+
+                // Render Cards
+                cards.forEach(card => {
+                    const cardDiv = document.createElement("div");
+                    cardDiv.style.marginBottom = "30px";
+                    cardDiv.style.borderBottom = "1px solid #eee";
+                    cardDiv.style.paddingBottom = "15px";
+
+                    // 1. TAG
+                    const tag = document.createElement("div");
+                    tag.style.fontWeight = "bold";
+                    tag.style.fontSize = "1.1em";
+                    tag.style.marginBottom = "5px";
+                    tag.innerText = card.tag;
+                    cardDiv.appendChild(tag);
+
+                    // 2. CITATION
+                    const author = document.createElement("div");
+                    author.style.fontWeight = "bold";
+                    author.style.marginBottom = "5px";
+                    author.innerText = card.citation;
+                    cardDiv.appendChild(author);
+
+                    // 3. BODY (With HTML highlighting)
+                    const bodyText = document.createElement("div");
+                    bodyText.style.fontSize = "0.9em";
+                    bodyText.style.lineHeight = "1.4";
+                    bodyText.innerHTML = card.body; // Injecting the HTML <u><mark> tags
+                    cardDiv.appendChild(bodyText);
+
+                    outputDiv.appendChild(cardDiv);
+                });
+            }
+
+        } catch (error) {
+            console.error(error);
+            outputDiv.innerHTML = `<p style="color:red">An error occurred: ${error.message}</p>`;
+        } finally {
+            // Reset Button
+            btn.disabled = false;
+            btn.innerText = "Generate Case";
+        }
+    }
+</script>
