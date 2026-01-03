@@ -118,7 +118,7 @@
 <header class="text-center mb-8">
     <h1 class="text-5xl font-bold text-amber-400">Hamilton</h1>
     <p class="text-slate-300">Intelligent Debate Speech Generator</p>
-    <p class="text-slate-400 text-sm mt-2" id="planIndicator">Free Plan</p>
+    <p class="text-slate-400 text-sm mt-2" id="planIndicator">Loading...</p>
 </header>
 
 <!-- Tabs -->
@@ -230,68 +230,13 @@
 
 </div>
 
-<!-- Plan Selection Modal -->
-<div id="planModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
-        <h2 class="text-3xl font-bold text-amber-400 text-center mb-2">Choose Your Plan</h2>
-        <p class="text-slate-300 text-center mb-6">Select the plan that fits your debate needs</p>
-        
-        <div class="grid md:grid-cols-3 gap-4 mb-6">
-            <!-- Novice Plan -->
-            <div class="plan-card" id="novicePlan">
-                <h3 class="text-xl font-bold text-amber-400 mb-2">Novice</h3>
-                <p class="text-3xl font-bold text-white mb-4">Free</p>
-                <ul class="text-slate-300 space-y-2 mb-4">
-                    <li>✓ 2 cases per day</li>
-                    <li>✓ 3 counter-speeches per day</li>
-                    <li>✓ Max 2 cards per focus point</li>
-                </ul>
-                <button class="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded" onclick="selectPlan('novice')">
-                    Select Free
-                </button>
-            </div>
-            
-            <!-- JV Plan -->
-            <div class="plan-card" id="jvPlan">
-                <h3 class="text-xl font-bold text-amber-400 mb-2">JV</h3>
-                <p class="text-3xl font-bold text-white mb-4">$5.99<span class="text-sm text-slate-400">/mo</span></p>
-                <ul class="text-slate-300 space-y-2 mb-4">
-                    <li>✓ 5 cases per day</li>
-                    <li>✓ Unlimited counter-speeches</li>
-                    <li>✓ Max 4 cards per focus point</li>
-                </ul>
-                <button class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-2 rounded" onclick="selectPlan('jv')">
-                    Upgrade to JV
-                </button>
-            </div>
-            
-            <!-- Varsity Plan -->
-            <div class="plan-card" id="varsityPlan">
-                <div class="text-xs bg-amber-500 text-slate-900 font-bold px-2 py-1 rounded w-fit mb-2">BEST VALUE</div>
-                <h3 class="text-xl font-bold text-amber-400 mb-2">Varsity</h3>
-                <p class="text-3xl font-bold text-white mb-4">$9.99<span class="text-sm text-slate-400">/mo</span></p>
-                <ul class="text-slate-300 space-y-2 mb-4">
-                    <li>✓ Unlimited cases</li>
-                    <li>✓ Unlimited counter-speeches</li>
-                    <li>✓ Max 5 cards per focus point</li>
-                </ul>
-                <button class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-2 rounded" onclick="selectPlan('varsity')">
-                    Go Varsity
-                </button>
-            </div>
-        </div>
-        
-        <p class="text-slate-400 text-sm text-center">You can change your plan at any time</p>
-    </div>
-</div>
-
 <!-- Upgrade Modal -->
 <div id="upgradeModal" class="modal-overlay" style="display: none;">
     <div class="modal-content max-w-md">
         <h2 class="text-2xl font-bold text-amber-400 text-center mb-4">Upgrade Required</h2>
         <p class="text-slate-300 text-center mb-6" id="upgradeMessage"></p>
-        <button class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-3 rounded mb-3" onclick="showPlanModal()">
-            View Plans
+        <button class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-3 rounded mb-3" onclick="showPaywall()">
+            View Plans & Upgrade
         </button>
         <button class="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded" onclick="closeUpgradeModal()">
             Cancel
@@ -304,47 +249,78 @@
     <p class="text-slate-400 text-sm">All Code by Leroy Qu</p>
 </footer>
 
-<script>
+<script type="module">
+import { checkJuniorVarsityStatus, checkVarsityStatus, showSubscriptionPaywall } from "./revenuecat.js";
+
 // User plan and usage tracking
 let userPlan = {
-    type: null, // null = not selected, 'novice', 'jv', 'varsity'
+    type: 'novice', // 'novice', 'jv', 'varsity'
     caseUsageToday: 0,
     counterUsageToday: 0,
     lastResetDate: new Date().toDateString()
 };
 
-// Load from storage
-function loadUserPlan() {
-    const stored = localStorage.getItem('hamiltonUserPlan');
+// Initialize app and check subscription status
+async function initApp() {
+    try {
+        // Check subscription tiers
+        const isVarsity = await checkVarsityStatus();
+        const isJV = await checkJuniorVarsityStatus();
+        
+        if (isVarsity) {
+            userPlan.type = 'varsity';
+            document.getElementById('planIndicator').textContent = 'Varsity Plan ($9.99/mo)';
+        } else if (isJV) {
+            userPlan.type = 'jv';
+            document.getElementById('planIndicator').textContent = 'JV Plan ($5.99/mo)';
+        } else {
+            userPlan.type = 'novice';
+            document.getElementById('planIndicator').textContent = 'Novice Plan (Free)';
+        }
+        
+        // Load usage from localStorage
+        loadUsageData();
+        updateUI();
+    } catch (error) {
+        console.error('Error checking subscription status:', error);
+        userPlan.type = 'novice';
+        document.getElementById('planIndicator').textContent = 'Novice Plan (Free)';
+        updateUI();
+    }
+}
+
+// Load usage data from localStorage
+function loadUsageData() {
+    const stored = localStorage.getItem('hamiltonUsage');
     if (stored) {
-        userPlan = JSON.parse(stored);
-        // Reset daily counts if it's a new day
-        if (userPlan.lastResetDate !== new Date().toDateString()) {
+        const savedUsage = JSON.parse(stored);
+        // Reset if it's a new day
+        if (savedUsage.lastResetDate !== new Date().toDateString()) {
             userPlan.caseUsageToday = 0;
             userPlan.counterUsageToday = 0;
             userPlan.lastResetDate = new Date().toDateString();
-            saveUserPlan();
+        } else {
+            userPlan.caseUsageToday = savedUsage.caseUsageToday || 0;
+            userPlan.counterUsageToday = savedUsage.counterUsageToday || 0;
+            userPlan.lastResetDate = savedUsage.lastResetDate;
         }
     }
-    updateUI();
+    saveUsageData();
 }
 
-function saveUserPlan() {
-    localStorage.setItem('hamiltonUserPlan', JSON.stringify(userPlan));
+function saveUsageData() {
+    localStorage.setItem('hamiltonUsage', JSON.stringify({
+        caseUsageToday: userPlan.caseUsageToday,
+        counterUsageToday: userPlan.counterUsageToday,
+        lastResetDate: userPlan.lastResetDate
+    }));
     updateUI();
 }
 
 function updateUI() {
-    const planNames = {
-        'novice': 'Novice Plan (Free)',
-        'jv': 'JV Plan ($5.99/mo)',
-        'varsity': 'Varsity Plan ($9.99/mo)'
-    };
-    
-    document.getElementById('planIndicator').textContent = userPlan.type ? planNames[userPlan.type] : 'No Plan Selected';
+    const limits = getPlanLimits();
     
     // Update usage info
-    const limits = getPlanLimits();
     if (limits.casesPerDay === Infinity) {
         document.getElementById('caseUsageInfo').textContent = `Cases used today: ${userPlan.caseUsageToday}`;
     } else {
@@ -368,29 +344,22 @@ function getPlanLimits() {
         'jv': { casesPerDay: 5, counterPerDay: Infinity, maxCards: 4 },
         'varsity': { casesPerDay: Infinity, counterPerDay: Infinity, maxCards: 5 }
     };
-    return limits[userPlan.type] || { casesPerDay: 0, counterPerDay: 0, maxCards: 0 };
+    return limits[userPlan.type] || limits.novice;
 }
 
-function showPlanModal() {
-    document.getElementById('planModal').style.display = 'flex';
-    document.getElementById('upgradeModal').style.display = 'none';
-}
-
-function selectPlan(plan) {
-    userPlan.type = plan;
-    saveUserPlan();
-    document.getElementById('planModal').style.display = 'none';
-    alert(`You've selected the ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan!`);
-}
+// Make showPaywall available globally
+window.showPaywall = function() {
+    showSubscriptionPaywall();
+};
 
 function showUpgradeModal(message) {
     document.getElementById('upgradeMessage').textContent = message;
     document.getElementById('upgradeModal').style.display = 'flex';
 }
 
-function closeUpgradeModal() {
+window.closeUpgradeModal = function() {
     document.getElementById('upgradeModal').style.display = 'none';
-}
+};
 
 function checkCardLimit() {
     const limits = getPlanLimits();
@@ -468,12 +437,6 @@ document.getElementById('speechLength').oninput = e =>
     document.getElementById('speechLengthDisplay').textContent = e.target.value;
 
 document.getElementById('generateCounterBtn').onclick = async () => {
-    // Check if plan is selected
-    if (!userPlan.type) {
-        showPlanModal();
-        return;
-    }
-    
     // Check usage limits
     const limits = getPlanLimits();
     if (userPlan.counterUsageToday >= limits.counterPerDay) {
@@ -504,7 +467,7 @@ Be structured, analytical, and persuasive.
         );
         counterOutput.innerText = text;
         userPlan.counterUsageToday++;
-        saveUserPlan();
+        saveUsageData();
     } catch (err) {
         counterOutput.innerText = err.message;
     }
@@ -526,12 +489,6 @@ document.getElementById('negBtn').onclick = () => {
 };
 
 document.getElementById('generateCaseBtn').onclick = async () => {
-    // Check if plan is selected
-    if (!userPlan.type) {
-        showPlanModal();
-        return;
-    }
-    
     // Check card limits
     if (!checkCardLimit()) {
         return;
@@ -603,7 +560,7 @@ Generate the complete case with proper HTML formatting.`;
         );
         caseOutput.innerHTML = text;
         userPlan.caseUsageToday++;
-        saveUserPlan();
+        saveUsageData();
     } catch (err) {
         caseOutput.innerHTML = `<p class="text-red-500">${err.message}</p>`;
     }
@@ -613,8 +570,8 @@ Generate the complete case with proper HTML formatting.`;
 document.getElementById('cardsPerPoint1').onchange = checkCardLimit;
 document.getElementById('cardsPerPoint2').onchange = checkCardLimit;
 
-// Initialize
-loadUserPlan();
+// Initialize app
+initApp();
 </script>
 
 </body>
