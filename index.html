@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hamilton - Debate Speech Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        [contenteditable]:empty:before {
+            content: attr(data-placeholder);
+            color: #94a3b8;
+            font-style: italic;
+        }
+        [contenteditable] mark,
+        [contenteditable] em {
+            background-color: yellow;
+            color: black;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-6">
+    <div class="max-w-6xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-5xl font-bold text-amber-400 mb-2 tracking-tight">Hamilton</h1>
+            <p class="text-slate-300 text-lg">Intelligent Debate Speech Generator</p>
+        </header>
+
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Input Section -->
+            <div class="bg-slate-800/50 backdrop-blur rounded-lg p-6 border border-slate-700">
+                <h2 class="text-2xl font-semibold text-amber-400 mb-4">Case Input</h2>
+                
+                <div
+                    id="caseInput"
+                    contenteditable="true"
+                    class="w-full h-64 bg-slate-900 text-slate-100 p-4 rounded border border-slate-600 focus:border-amber-400 focus:outline-none overflow-y-auto"
+                    data-placeholder="Paste your formatted case here (highlights and bold preserved)..."
+                ></div>
+
+                <div class="mt-4 space-y-4">
+                    <div>
+                        <label class="block text-slate-300 mb-2">
+                            Speech Length: <span id="speechLengthDisplay">3</span> minutes
+                        </label>
+                        <input
+                            type="range"
+                            id="speechLength"
+                            min="1"
+                            max="8"
+                            value="3"
+                            class="w-full"
+                        />
+                        <div class="flex justify-between text-xs text-slate-400 mt-1">
+                            <span>1 min</span>
+                            <span>8 min</span>
+                        </div>
+                    </div>
+
+                    <button
+                        id="generateBtn"
+                        class="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-slate-600 text-slate-900 font-semibold py-3 rounded transition-colors flex items-center justify-center gap-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                        </svg>
+                        Generate Counter-Speech
+                    </button>
+                </div>
+
+                <div id="parsedArgsDisplay" class="mt-4 hidden p-3 bg-slate-900/50 rounded border border-slate-600">
+                    <h3 class="text-sm font-semibold text-amber-400 mb-2">Detected Arguments: <span id="argCount">0</span></h3>
+                    <div id="argsList" class="space-y-2 text-xs text-slate-300"></div>
+                </div>
+            </div>
+
+            <!-- Output Section -->
+            <div class="bg-slate-800/50 backdrop-blur rounded-lg p-6 border border-slate-700">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-semibold text-amber-400">Counter-Speech</h2>
+                    <div class="flex gap-2">
+                        <button
+                            id="copyBtn"
+                            class="p-2 bg-slate-700 hover:bg-slate-600 rounded transition-colors"
+                            title="Copy to clipboard"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-300">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                        </button>
+                        <button
+                            id="downloadBtn"
+                            class="p-2 bg-slate-700 hover:bg-slate-600 rounded transition-colors"
+                            title="Download"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-300">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="outputBox" class="bg-slate-900 rounded p-4 h-96 overflow-y-auto border border-slate-600">
+                    <p class="text-slate-400 italic">Your generated counter-speech will appear here...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 bg-slate-800/30 backdrop-blur rounded-lg p-4 border border-slate-700">
+            <h3 class="text-lg font-semibold text-amber-400 mb-2 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                How to Use
+            </h3>
+            <div class="text-slate-300 text-sm space-y-2">
+                <p><strong>Step 1:</strong> Copy your formatted debate case from your word processor (Word, Google Docs, etc.)</p>
+                <p><strong>Step 2:</strong> Paste it directly into the input box - all formatting will be preserved!</p>
+                <p><strong>Step 3:</strong> Hamilton will automatically detect:</p>
+                <ul class="ml-6 mt-1 space-y-1">
+                    <li>• <strong>Highlighted text</strong> (yellow highlights, marks, etc.)</li>
+                    <li>• <strong>Bold text</strong> as argument tags</li>
+                    <li>• <strong>Author citations</strong> (e.g., Smith '23)</li>
+                </ul>
+                <p class="mt-2"><strong>Step 4:</strong> Adjust speech length and click generate!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let puterReady = false;
+        let generatedSpeech = '';
+
+        // Wait for Puter to load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (window.puter && window.puter.ai) {
+                    puterReady = true;
+                    console.log('Puter AI ready');
+                } else {
+                    console.warn('Puter AI not available');
+                }
+            }, 1000);
+        });
+
+        // Update speech length display
+        document.getElementById('speechLength').addEventListener('input', (e) => {
+            document.getElementById('speechLengthDisplay').textContent = e.target.value;
+        });
+
+        // Parse case function
+        function parseRichTextCase(htmlContent) {
+            const args = [];
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlContent, 'text/html');
+            const body = doc.body;
+
+            const highlightedElements = [];
+            const walker = document.createTreeWalker(body, NodeFilter.SHOW_ELEMENT, null, false);
+
+            let node;
+            while (node = walker.nextNode()) {
+                const style = window.getComputedStyle(node);
+                const bgColor = style.backgroundColor || node.style.backgroundColor;
+                
+                const hasBackground = bgColor && 
+                    bgColor !== 'transparent' && 
+                    bgColor !== 'rgba(0, 0, 0, 0)' &&
+                    bgColor !== 'rgb(255, 255, 255)' &&
+                    bgColor !== '#ffffff' &&
+                    bgColor !== 'white';
+                
+                const isHighlighted = 
+                    node.tagName === 'MARK' ||
+                    node.tagName === 'EM' ||
+                    hasBackground ||
+                    node.style.textDecoration?.includes('underline');
+
+                if (isHighlighted) {
+                    const text = node.textContent.trim();
+                    if (text.length > 10) {
+                        highlightedElements.push(text);
+                    }
+                }
+            }
+
+            const fullText = body.textContent;
+            const lines = fullText.split('\n').map(l => l.trim()).filter(l => l);
+
+            let currentArg = null;
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                
+                const authorMatch = line.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+[''](\d{2}|\d{4})/);
+                if (authorMatch) {
+                    if (currentArg && currentArg.highlights.length > 0) {
+                        args.push(currentArg);
+                    }
+                    currentArg = {
+                        author: authorMatch[0],
+                        tag: '',
+                        highlights: []
+                    };
+                    continue;
+                }
+
+                if (currentArg && !currentArg.tag) {
+                    const tagMatch = line.match(/^\[([^\]]+)\]/) || line.match(/^([A-Z\s]{5,}[A-Z])$/);
+                    if (tagMatch) {
+                        currentArg.tag = tagMatch[1] || tagMatch[0];
+                        continue;
+                    }
+                }
+            }
+
+            if (highlightedElements.length > 0) {
+                if (currentArg) {
+                    currentArg.highlights = highlightedElements;
+                    args.push(currentArg);
+                } else {
+                    const authorMatch = fullText.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+[''](\d{2}|\d{4})/);
+                    args.push({
+                        author: authorMatch ? authorMatch[0] : 'Source citation',
+                        tag: lines[0]?.substring(0, 100) || 'Main argument',
+                        highlights: highlightedElements
+                    });
+                }
+            }
+
+            return args;
+        }
+
+        // Display parsed arguments
+        function displayParsedArgs(args) {
+            const display = document.getElementById('parsedArgsDisplay');
+            const count = document.getElementById('argCount');
+            const list = document.getElementById('argsList');
+
+            if (args.length === 0) {
+                display.classList.add('hidden');
+                return;
+            }
+
+            count.textContent = args.length;
+            list.innerHTML = args.map((arg, i) => `
+                <div class="border-l-2 border-amber-500 pl-2">
+                    <div class="font-semibold">${arg.tag || `Argument ${i + 1}`}</div>
+                    <div class="text-slate-400">${arg.author}</div>
+                    <div class="text-slate-500 text-xs mt-1">
+                        ${arg.highlights.length} highlight${arg.highlights.length !== 1 ? 's' : ''} detected
+                    </div>
+                </div>
+            `).join('');
+            display.classList.remove('hidden');
+        }
+
+        // Generate counter-speech
+        async function generateCounterSpeech() {
+            const btn = document.getElementById('generateBtn');
+            const outputBox = document.getElementById('outputBox');
+            const caseInput = document.getElementById('caseInput');
+            const speechLength = document.getElementById('speechLength').value;
+
+            btn.disabled = true;
+            btn.innerHTML = `
+                <div class="animate-spin h-5 w-5 border-2 border-slate-900 border-t-transparent rounded-full"></div>
+                Generating...
+            `;
+
+            const htmlContent = caseInput.innerHTML;
+            const parsed = parseRichTextCase(htmlContent);
+            displayParsedArgs(parsed);
+
+            if (parsed.length === 0) {
+                outputBox.innerHTML = `<p class="text-slate-100">No arguments detected. Please ensure your case includes:<br>- Author citations (e.g., Smith '23)<br>- Bolded tags<br>- Highlighted evidence (use your word processor's highlight tool, then copy/paste)</p>`;
+                btn.disabled = false;
+                btn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    </svg>
+                    Generate Counter-Speech
+                `;
+                return;
+            }
+
+            if (!window.puter || !window.puter.ai) {
+                outputBox.innerHTML = `<p class="text-slate-100">Puter AI is not available. Please refresh the page and try again.</p>`;
+                btn.disabled = false;
+                btn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    </svg>
+                    Generate Counter-Speech
+                `;
+                return;
+            }
+
+            try {
+                const prompt = `You are a skilled debate coach. Generate a ${speechLength}-minute rebuttal speech against the following arguments. Be direct, analytical, and persuasive. Structure your speech with clear transitions.
+
+Arguments to refute:
+${parsed.map((arg, i) => `
+${i + 1}. ${arg.tag || 'Argument'}
+Source: ${arg.author}
+Key claims: ${arg.highlights.join(' ... ')}
+`).join('\n')}
+
+Generate a flowing ${speechLength}-minute speech that:
+1. Briefly signposts the main refutations
+2. Systematically addresses each argument with specific counterarguments
+3. Points out logical flaws, questionable evidence, or alternative interpretations
+4. Uses clear transitions between points
+5. Concludes with impact analysis
+
+Format as a natural speech, not bullet points. Target approximately ${speechLength * 150} words.`;
+
+                const response = await window.puter.ai.chat(prompt, { model: "gpt-4o-mini" });
+                generatedSpeech = response;
+                outputBox.innerHTML = `<p class="text-slate-100 whitespace-pre-wrap leading-relaxed">${response}</p>`;
+            } catch (error) {
+                console.error('Error:', error);
+                outputBox.innerHTML = `<p class="text-slate-100">Error generating speech. Please try again.<br><br>Error: ${error.message}</p>`;
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </svg>
+                Generate Counter-Speech
+            `;
+        }
+
+        // Copy to clipboard
+        function copyToClipboard() {
+            if (generatedSpeech) {
+                navigator.clipboard.writeText(generatedSpeech);
+                alert('Copied to clipboard!');
+            }
+        }
+
+        // Download speech
+        function downloadSpeech() {
+            if (generatedSpeech) {
+                const blob = new Blob([generatedSpeech], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'hamilton-speech.txt';
+                a.click();
+            }
+        }
+
+        // Event listeners
+        document.getElementById('generateBtn').addEventListener('click', generateCounterSpeech);
+        document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
+        document.getElementById('downloadBtn').addEventListener('click', downloadSpeech);
+    </script>
+</body>
+</html>
