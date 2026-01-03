@@ -513,64 +513,159 @@ Format as a natural speech, not bullet points. Target approximately ${speechLeng
             `;
         }
 
-        // Generate case
-        async function generateCase() {
-            const btn = document.getElementById('generateCaseBtn');
-            const outputBox = document.getElementById('caseOutputBox');
-            const topic = document.getElementById('caseTopic').value;
-            const focusPoint1 = document.getElementById('focusPoint1').value;
-            const focusPoint2 = document.getElementById('focusPoint2').value;
-            const evidenceCount = document.getElementById('evidenceCount').value;
+        <script src="https://js.puter.com/v2/"></script>
 
-            if (!topic || !selectedSide || !focusPoint1) {
-                outputBox.innerHTML = `<p class="text-slate-100">Please fill in: Topic, Side, and at least one Focus Point.</p>`;
-                return;
-            }
+<section id="case-writer" style="padding: 20px; border: 1px solid #ccc; margin-top: 20px; font-family: 'Times New Roman', serif;">
+    <h2>Write Me A Case (Powered by AI)</h2>
+    
+    <div class="input-group" style="margin-bottom: 10px;">
+        <label>Topic: </label>
+        <input type="text" id="topicInput" placeholder="We should increase..." style="width: 300px;">
+    </div>
 
-            btn.disabled = true;
-            btn.innerHTML = `
-                <div class="animate-spin h-5 w-5 border-2 border-slate-900 border-t-transparent rounded-full"></div>
-                Generating Case...
-            `;
+    <div class="input-group" style="margin-bottom: 10px;">
+        <label>Side: </label>
+        <select id="sideInput">
+            <option value="Aff">Affirmative</option>
+            <option value="Neg">Negative</option>
+        </select>
+    </div>
 
-            if (!window.puter || !window.puter.ai) {
-                outputBox.innerHTML = `<p class="text-slate-100">Puter AI is not available. Please refresh the page and try again.</p>`;
-                btn.disabled = false;
-                btn.innerHTML = `Generate Case`;
-                return;
-            }
+    <div class="input-group" style="margin-bottom: 10px;">
+        <label>Focus Point 1: </label>
+        <input type="text" id="focus1Input" placeholder="Economy">
+    </div>
 
-            try {
-                const focusPoints = [focusPoint1, focusPoint2].filter(fp => fp.trim());
+    <div class="input-group" style="margin-bottom: 10px;">
+        <label>Focus Point 2 (Optional): </label>
+        <input type="text" id="focus2Input" placeholder="Indo Pacific Relations">
+    </div>
+
+    <div class="input-group" style="margin-bottom: 10px;">
+        <label>Amount of Evidence (1-5): </label>
+        <input type="number" id="evidenceCount" min="1" max="5" value="1">
+    </div>
+
+    <button id="genBtn" onclick="generateCase()" style="padding: 10px 20px; cursor: pointer; background-color: #333; color: white; border: none;">Generate Case</button>
+
+    <hr>
+
+    <div id="caseOutput" style="margin-top: 20px;"></div>
+</section>
+
+<script>
+    async function generateCase() {
+        const topic = document.getElementById('topicInput').value;
+        const side = document.getElementById('sideInput').value;
+        const focus1 = document.getElementById('focus1Input').value;
+        const focus2 = document.getElementById('focus2Input').value;
+        const count = parseInt(document.getElementById('evidenceCount').value);
+        const outputDiv = document.getElementById('caseOutput');
+        const btn = document.getElementById('genBtn');
+
+        // Validation
+        if (!topic || !focus1) {
+            alert("Please enter a Topic and at least Focus Point 1.");
+            return;
+        }
+
+        // UI Loading State
+        outputDiv.innerHTML = "<em>Generating case... this may take a few seconds...</em>";
+        btn.disabled = true;
+        btn.innerText = "Generating...";
+
+        const focusPoints = [focus1];
+        if (focus2) focusPoints.push(focus2);
+
+        try {
+            // Loop through each focus point (doing them sequentially to handle API load)
+            outputDiv.innerHTML = ""; // Clear loading text
+            
+            for (const focus of focusPoints) {
+                // Create Header
+                const focusHeader = document.createElement("h3");
+                focusHeader.innerText = `Contention: ${focus}`;
+                focusHeader.style.textDecoration = "underline";
+                outputDiv.appendChild(focusHeader);
+
+                // Construct the Prompt for the AI
+                const prompt = `
+                    You are a debate case writer.
+                    Topic: "${topic}"
+                    Side: ${side}
+                    Focus Point: "${focus}"
+                    
+                    Generate ${count} distinct pieces of evidence (cards).
+                    
+                    STRICT LOGIC:
+                    For each card, follow this logic chain:
+                    1. Claim: A statement connecting the ${side} to the ${focus}.
+                    2. Link: How the specific legislation or action causes this.
+                    3. Impact: The ultimate good/bad result (e.g. War, Economic Collapse).
+
+                    OUTPUT FORMAT:
+                    Return ONLY a raw JSON array. Do not include markdown formatting like \`\`\`json.
+                    The array must contain objects with these keys:
+                    - "tag": The main point (Claim + Impact) formatted as a summary sentence.
+                    - "citation": A fake author and year (e.g., "Smith '24").
+                    - "body": A paragraph (~60 words) simulating an article. You MUST use HTML tags <u><mark> inside this string to highlight the Claim, Link, and Impact sentences. The rest of the text should be normal.
+                `;
+
+                // Call Puter AI
+                // Note: puter.ai.chat returns a response object. We force it to text for parsing.
+                const response = await puter.ai.chat(prompt);
                 
-                const prompt = `You are a competitive debate case writer. Generate a complete ${selectedSide} debate case for the following resolution:
+                // Parse the response (Cleaning up potential markdown wrappers)
+                let cleanJson = response.toString().replace(/```json/g, '').replace(/```/g, '').trim();
+                let cards = [];
+                try {
+                    cards = JSON.parse(cleanJson);
+                } catch (e) {
+                    console.error("JSON Parse Error", e);
+                    outputDiv.innerHTML += `<p style="color:red">Error parsing AI response. Try again.</p>`;
+                    continue;
+                }
 
-RESOLUTION: ${topic}
-SIDE: ${selectedSide}
-FOCUS POINTS: ${focusPoints.join(', ')}
-EVIDENCE PER FOCUS POINT: ${evidenceCount}
+                // Render Cards
+                cards.forEach(card => {
+                    const cardDiv = document.createElement("div");
+                    cardDiv.style.marginBottom = "30px";
+                    cardDiv.style.borderBottom = "1px solid #eee";
+                    cardDiv.style.paddingBottom = "15px";
 
-For each focus point, create ${evidenceCount} pieces of evidence. Each piece of evidence MUST follow this structure:
+                    // 1. TAG
+                    const tag = document.createElement("div");
+                    tag.style.fontWeight = "bold";
+                    tag.style.fontSize = "1.1em";
+                    tag.style.marginBottom = "5px";
+                    tag.innerText = card.tag;
+                    cardDiv.appendChild(tag);
 
-**[BOLD TAG - Main claim in 3-8 words]**
-Author LastName 'YY [credentials and context in brackets]
+                    // 2. CITATION
+                    const author = document.createElement("div");
+                    author.style.fontWeight = "bold";
+                    author.style.marginBottom = "5px";
+                    author.innerText = card.citation;
+                    cardDiv.appendChild(author);
 
-[Full paragraph of evidence text with the most important phrases marked between __underscores__ for highlighting]
+                    // 3. BODY (With HTML highlighting)
+                    const bodyText = document.createElement("div");
+                    bodyText.style.fontSize = "0.9em";
+                    bodyText.style.lineHeight = "1.4";
+                    bodyText.innerHTML = card.body; // Injecting the HTML <u><mark> tags
+                    cardDiv.appendChild(bodyText);
 
-CRITICAL FORMATTING RULES:
-1. Each argument needs: CLAIM (the tag), LINK (causal mechanism), and IMPACT (consequence)
-2. Tags must be bold using **double asterisks**
-3. Author citations MUST be "LastName 'YY" format (e.g., Smith '23)
-4. Highlight key phrases by wrapping them in __double underscores__ (these will be highlighted yellow)
-5. Each evidence card should be 100-200 words with 2-4 highlighted sections
-6. Make the evidence realistic and cite actual policy implications
+                    outputDiv.appendChild(cardDiv);
+                });
+            }
 
-Example format:
-**ECONOMIC COLLAPSE INEVITABLE**
-Johnson '24 [Professor of Economics at MIT, specializing in international trade policy]
-
-The resolution's approach to trade policy __fundamentally undermines market stability__. Current economic indicators show that __protectionist measures reduce GDP by 2-3% annually__ while simultaneously __increasing consumer prices across all sectors__. The compounding effect of these policies __triggers a cascade of market failures__ that historical analysis demonstrates leads to __complete economic destabilization within 18-24 months__. Without intervention, __recession becomes unavoidable__, affecting global markets.
-
-Generate the complete case now with proper formatting.`;
-
-                const response = await window.puter.ai.chat(prompt, { model: "gpt-4o-
+        } catch (error) {
+            console.error(error);
+            outputDiv.innerHTML = `<p style="color:red">An error occurred: ${error.message}</p>`;
+        } finally {
+            // Reset Button
+            btn.disabled = false;
+            btn.innerText = "Generate Case";
+        }
+    }
+</script>
