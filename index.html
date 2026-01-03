@@ -9,7 +9,6 @@ const HamiltonDebate = () => {
   const [parsedArgs, setParsedArgs] = useState([]);
   const contentEditableRef = useRef(null);
   
-  // Case writer state
   const [topic, setTopic] = useState('');
   const [side, setSide] = useState('Aff');
   const [focusPoint1, setFocusPoint1] = useState('');
@@ -37,10 +36,10 @@ Focus points to cover: ${focusPoints.join(', ')}
 
 For EACH focus point, create ${evidencePerPoint} pieces of evidence. Each piece of evidence should follow this structure:
 
-1. **CLAIM**: A clear argument statement (1 per focus point that ties all evidence together)
-2. **TAG**: A concise summary of what the evidence proves (this should be bolded)
-3. **CITATION**: Realistic author and year (format: AuthorLastName 'YY) 
-4. **EVIDENCE**: Full paragraph of evidence (150-250 words) that includes:
+1. CLAIM: A clear argument statement (1 per focus point that ties all evidence together)
+2. TAG: A concise summary of what the evidence proves (this should be bolded)
+3. CITATION: Realistic author and year (format: AuthorLastName 'YY) 
+4. EVIDENCE: Full paragraph of evidence (150-250 words) that includes:
    - Background context
    - Key data, statistics, or expert analysis
    - LINK: Explanation of the causal mechanism (how/why the claim happens)
@@ -139,9 +138,8 @@ Generate the full ${side} case now with ${evidencePerPoint} pieces of evidence p
     );
 
     let node;
-    while (node = walker.nextNode()) {
-      const style = window.getComputedStyle(node);
-      const bgColor = style.backgroundColor || node.style.backgroundColor;
+    while ((node = walker.nextNode())) {
+      const bgColor = node.style.backgroundColor;
       
       const hasBackground = bgColor && 
         bgColor !== 'transparent' && 
@@ -305,7 +303,7 @@ Format as a natural speech, not bullet points. Target approximately ${speechLeng
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-6">
       <div className="max-w-6xl mx-auto">
         <header className="text-center mb-8">
-          <h1 className="text-5xl font-bold text-amber-400 mb-2 tracking-tight">
+          <h1 className="text-5xl font-bold text-amber-400 mb-2">
             Hamilton
           </h1>
           <p className="text-slate-300 text-lg">
@@ -313,7 +311,6 @@ Format as a natural speech, not bullet points. Target approximately ${speechLeng
           </p>
         </header>
 
-        {/* Tab Navigation */}
         <div className="flex gap-4 mb-6 justify-center">
           <button
             onClick={() => setActiveTab('counter')}
@@ -338,10 +335,8 @@ Format as a natural speech, not bullet points. Target approximately ${speechLeng
         </div>
 
         {activeTab === 'counter' ? (
-          // COUNTER-SPEECH GENERATOR
           <div>
             <div className="grid md:grid-cols-2 gap-6">
-              {/* Input Section */}
               <div className="bg-slate-800/50 backdrop-blur rounded-lg p-6 border border-slate-700">
                 <h2 className="text-2xl font-semibold text-amber-400 mb-4">
                   Case Input
@@ -352,7 +347,6 @@ Format as a natural speech, not bullet points. Target approximately ${speechLeng
                   contentEditable
                   onPaste={handlePaste}
                   className="w-full h-64 bg-slate-900 text-slate-100 p-4 rounded border border-slate-600 focus:border-amber-400 focus:outline-none overflow-y-auto"
-                  style={{ minHeight: '16rem' }}
                   data-placeholder="Paste your formatted case here (highlights and bold preserved)..."
                 />
 
@@ -414,7 +408,6 @@ Format as a natural speech, not bullet points. Target approximately ${speechLeng
                 )}
               </div>
 
-              {/* Output Section */}
               <div className="bg-slate-800/50 backdrop-blur rounded-lg p-6 border border-slate-700">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-2xl font-semibold text-amber-400">
@@ -460,22 +453,15 @@ Format as a natural speech, not bullet points. Target approximately ${speechLeng
                 How to Use
               </h3>
               <div className="text-slate-300 text-sm space-y-2">
-                <p><strong>Step 1:</strong> Copy your formatted debate case from your word processor (Word, Google Docs, etc.)</p>
+                <p><strong>Step 1:</strong> Copy your formatted debate case from your word processor</p>
                 <p><strong>Step 2:</strong> Paste it directly into the input box - all formatting will be preserved!</p>
-                <p><strong>Step 3:</strong> Hamilton will automatically detect:</p>
-                <ul className="ml-6 mt-1 space-y-1">
-                  <li>• <strong>Highlighted text</strong> (yellow highlights, marks, etc.)</li>
-                  <li>• <strong>Bold text</strong> as argument tags</li>
-                  <li>• <strong>Author citations</strong> (e.g., Smith '23)</li>
-                </ul>
-                <p className="mt-2"><strong>Step 4:</strong> Adjust speech length and click generate!</p>
+                <p><strong>Step 3:</strong> Hamilton will automatically detect highlighted text, bold tags, and author citations</p>
+                <p><strong>Step 4:</strong> Adjust speech length and click generate!</p>
               </div>
             </div>
           </div>
         ) : (
-          // CASE WRITER
           <div className="grid md:grid-cols-2 gap-6">
-            {/* Input Section */}
             <div className="bg-slate-800/50 backdrop-blur rounded-lg p-6 border border-slate-700">
               <h2 className="text-2xl font-semibold text-amber-400 mb-4">
                 Case Parameters
@@ -587,7 +573,6 @@ Format as a natural speech, not bullet points. Target approximately ${speechLeng
               </div>
             </div>
 
-            {/* Output Section */}
             <div className="bg-slate-800/50 backdrop-blur rounded-lg p-6 border border-slate-700">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-semibold text-amber-400">
