@@ -20,6 +20,7 @@
     font-family: 'Times New Roman', serif;
     line-height: 1.6;
     color: #1e293b;
+    margin-bottom: 1.5em;
 }
 
 .debate-card .tag {
@@ -291,30 +292,42 @@ async function initApp() {
 
 // Load usage data from localStorage
 function loadUsageData() {
-    const stored = localStorage.getItem('hamiltonUsage');
-    if (stored) {
-        const savedUsage = JSON.parse(stored);
-        // Reset if it's a new day
-        if (savedUsage.lastResetDate !== new Date().toDateString()) {
-            userPlan.caseUsageToday = 0;
-            userPlan.counterUsageToday = 0;
-            userPlan.lastResetDate = new Date().toDateString();
-        } else {
-            userPlan.caseUsageToday = savedUsage.caseUsageToday || 0;
-            userPlan.counterUsageToday = savedUsage.counterUsageToday || 0;
-            userPlan.lastResetDate = savedUsage.lastResetDate;
+    try {
+        const stored = localStorage.getItem('hamiltonUsage');
+        if (stored) {
+            const savedUsage = JSON.parse(stored);
+            // Reset if it's a new day
+            if (savedUsage.lastResetDate !== new Date().toDateString()) {
+                userPlan.caseUsageToday = 0;
+                userPlan.counterUsageToday = 0;
+                userPlan.lastResetDate = new Date().toDateString();
+            } else {
+                userPlan.caseUsageToday = savedUsage.caseUsageToday || 0;
+                userPlan.counterUsageToday = savedUsage.counterUsageToday || 0;
+                userPlan.lastResetDate = savedUsage.lastResetDate;
+            }
         }
+        saveUsageData();
+    } catch (error) {
+        console.error('Error loading usage data:', error);
+        // Reset to defaults if localStorage is corrupted
+        userPlan.caseUsageToday = 0;
+        userPlan.counterUsageToday = 0;
+        userPlan.lastResetDate = new Date().toDateString();
     }
-    saveUsageData();
 }
 
 function saveUsageData() {
-    localStorage.setItem('hamiltonUsage', JSON.stringify({
-        caseUsageToday: userPlan.caseUsageToday,
-        counterUsageToday: userPlan.counterUsageToday,
-        lastResetDate: userPlan.lastResetDate
-    }));
-    updateUI();
+    try {
+        localStorage.setItem('hamiltonUsage', JSON.stringify({
+            caseUsageToday: userPlan.caseUsageToday,
+            counterUsageToday: userPlan.counterUsageToday,
+            lastResetDate: userPlan.lastResetDate
+        }));
+        updateUI();
+    } catch (error) {
+        console.error('Error saving usage data:', error);
+    }
 }
 
 function updateUI() {
@@ -334,8 +347,23 @@ function updateUI() {
     }
     
     // Update card input limits
-    document.getElementById('cardsPerPoint1').max = limits.maxCards;
-    document.getElementById('cardsPerPoint2').max = limits.maxCards;
+    const cards1 = document.getElementById('cardsPerPoint1');
+    const cards2 = document.getElementById('cardsPerPoint2');
+    
+    if (cards1) {
+        cards1.max = limits.maxCards;
+        // Clamp current value to max
+        if (parseInt(cards1.value) > limits.maxCards) {
+            cards1.value = limits.maxCards;
+        }
+    }
+    if (cards2) {
+        cards2.max = limits.maxCards;
+        // Clamp current value to max
+        if (parseInt(cards2.value) > limits.maxCards) {
+            cards2.value = limits.maxCards;
+        }
+    }
 }
 
 function getPlanLimits() {
@@ -349,7 +377,12 @@ function getPlanLimits() {
 
 // Make showPaywall available globally
 window.showPaywall = function() {
-    showSubscriptionPaywall();
+    try {
+        showSubscriptionPaywall();
+    } catch (error) {
+        console.error('Error showing paywall:', error);
+        alert('Unable to show subscription options. Please try again later.');
+    }
 };
 
 function showUpgradeModal(message) {
@@ -437,18 +470,19 @@ document.getElementById('speechLength').oninput = e =>
     document.getElementById('speechLengthDisplay').textContent = e.target.value;
 
 document.getElementById('generateCounterBtn').onclick = async () => {
-    // Check usage limits
-    const limits = getPlanLimits();
-    if (userPlan.counterUsageToday >= limits.counterPerDay) {
-        showUpgradeModal(`You've reached your daily limit of ${limits.counterPerDay} counter-speeches. Upgrade for more!`);
-        return;
-    }
-    
     const counterOutput = document.getElementById('counterOutput');
     const caseInput = document.getElementById('caseInput');
     const speechLength = document.getElementById('speechLength');
     
+    // Validation
+    if (!caseInput.innerText.trim()) {
+        counterOutput.textContent = "Please paste a case first!";
+        counterOutput.className = "text-red-400";
+        return;
+    }
+    
     counterOutput.textContent = "Generating…";
+    counterOutput.className = "text-slate-400 italic";
 
     const prompt = `
 Generate a ${speechLength.value}-minute rebuttal speech
@@ -463,13 +497,15 @@ Be structured, analytical, and persuasive.
         const text = await callAI(
             "You are a high-level debate coach.",
             prompt,
-            speechLength.value * 180
+            parseInt(speechLength.value) * 180
         );
         counterOutput.innerText = text;
+        counterOutput.className = "text-slate-100";
         userPlan.counterUsageToday++;
         saveUsageData();
     } catch (err) {
-        counterOutput.innerText = err.message;
+        counterOutput.innerText = `Error: ${err.message}`;
+        counterOutput.className = "text-red-400";
     }
 };
 
@@ -489,6 +525,24 @@ document.getElementById('negBtn').onclick = () => {
 };
 
 document.getElementById('generateCaseBtn').onclick = async () => {
+    const caseOutput = document.getElementById('caseOutput');
+    const topic = document.getElementById('topic');
+    const focusPoint1 = document.getElementById('focusPoint1');
+    const focusPoint2 = document.getElementById('focusPoint2');
+    const cardsPerPoint1 = document.getElementById('cardsPerPoint1');
+    const cardsPerPoint2 = document.getElementById('cardsPerPoint2');
+    
+    // Validation
+    if (!topic.value.trim()) {
+        caseOutput.innerHTML = "<p class='text-red-500'>Please enter a topic/resolution first!</p>";
+        return;
+    }
+    
+    if (!focusPoint1.value.trim()) {
+        caseOutput.innerHTML = "<p class='text-red-500'>Please enter at least one focus point!</p>";
+        return;
+    }
+    
     // Check card limits
     if (!checkCardLimit()) {
         return;
@@ -501,25 +555,18 @@ document.getElementById('generateCaseBtn').onclick = async () => {
         return;
     }
     
-    const caseOutput = document.getElementById('caseOutput');
-    const topic = document.getElementById('topic');
-    const focusPoint1 = document.getElementById('focusPoint1');
-    const focusPoint2 = document.getElementById('focusPoint2');
-    const cardsPerPoint1 = document.getElementById('cardsPerPoint1');
-    const cardsPerPoint2 = document.getElementById('cardsPerPoint2');
-    
     caseOutput.innerHTML = "<p class='text-slate-500 italic'>Generating your debate case...</p>";
 
     const focusPoints = [];
-    if (focusPoint1.value) {
+    if (focusPoint1.value.trim()) {
         focusPoints.push({
-            point: focusPoint1.value,
+            point: focusPoint1.value.trim(),
             cards: parseInt(cardsPerPoint1.value) || 2
         });
     }
-    if (focusPoint2.value) {
+    if (focusPoint2.value.trim()) {
         focusPoints.push({
-            point: focusPoint2.value,
+            point: focusPoint2.value.trim(),
             cards: parseInt(cardsPerPoint2.value) || 2
         });
     }
@@ -528,7 +575,7 @@ document.getElementById('generateCaseBtn').onclick = async () => {
 
 CRITICAL FORMATTING REQUIREMENTS:
 
-For each contention/focus point, create ${focusPoints[0]?.cards || 2} evidence cards in this EXACT format:
+For each contention/focus point, create the specified number of evidence cards in this EXACT format:
 
 <div class="debate-card">
 <span class="tag"><strong>[Compelling Tag Line]</strong></span>
@@ -547,7 +594,7 @@ REQUIREMENTS:
 6. Highlighted portions should read smoothly on their own
 7. Use all three formatting types (bold, underline, highlight) strategically
 
-Focus Points:
+Focus Points and Card Counts:
 ${focusPoints.map((fp, i) => `${i+1}. ${fp.point} (${fp.cards} cards)`).join('\n')}
 
 Generate the complete case with proper HTML formatting.`;
@@ -562,13 +609,16 @@ Generate the complete case with proper HTML formatting.`;
         userPlan.caseUsageToday++;
         saveUsageData();
     } catch (err) {
-        caseOutput.innerHTML = `<p class="text-red-500">${err.message}</p>`;
+        caseOutput.innerHTML = `<p class="text-red-500">Error: ${err.message}</p>`;
     }
 };
 
 // Check card inputs when they change
 document.getElementById('cardsPerPoint1').onchange = checkCardLimit;
 document.getElementById('cardsPerPoint2').onchange = checkCardLimit;
+
+// Initialize app - CRITICAL: This was missing!
+initApp();
 </script>
 
 </body>
