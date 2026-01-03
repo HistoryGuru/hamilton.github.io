@@ -140,7 +140,16 @@ async function callAI(system, user, maxTokens = 1200) {
             max_tokens: maxTokens
         });
 
-        return response;
+        // Extract text from Puter's response object
+        if (typeof response === 'string') {
+            return response;
+        } else if (response.message) {
+            return response.message;
+        } else if (response.content) {
+            return response.content;
+        } else {
+            return String(response);
+        }
     } catch (error) {
         console.error("AI Error:", error);
         throw new Error("AI request failed: " + error.message);
