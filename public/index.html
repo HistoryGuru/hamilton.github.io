@@ -140,15 +140,30 @@ async function callAI(system, user, maxTokens = 1200) {
             max_tokens: maxTokens
         });
 
+        console.log("Puter AI Response:", response);
+
         // Extract text from Puter's response object
         if (typeof response === 'string') {
             return response;
+        } else if (response.text) {
+            return response.text;
         } else if (response.message) {
             return response.message;
         } else if (response.content) {
             return response.content;
+        } else if (response.response) {
+            return response.response;
+        } else if (Array.isArray(response) && response[0]) {
+            return response[0].text || response[0].content || String(response[0]);
         } else {
-            return String(response);
+            // Try to get any text property from the object
+            const keys = Object.keys(response);
+            for (const key of keys) {
+                if (typeof response[key] === 'string' && response[key].length > 10) {
+                    return response[key];
+                }
+            }
+            return JSON.stringify(response, null, 2);
         }
     } catch (error) {
         console.error("AI Error:", error);
