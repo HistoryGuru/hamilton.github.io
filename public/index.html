@@ -615,23 +615,6 @@ document.getElementById('cardsPerPoint2').onchange = checkCardLimit;
 
 // Initialize
 loadUserPlan();
-
-    import { checkJuniorVarsityStatus } from "./revenuecat.js";
-
-// Run this when the app starts
-async function initApp() {
-  const isPremium = await checkJuniorVarsityStatus();
-  
-  if (isPremium) {
-    document.getElementById("status").innerText = "Welcome, Junior Varsity Member!";
-  } else {
-    document.getElementById("status").innerText = "Free Version";
-    // Show the paywall if they aren't subscribed
-    showSubscriptionPaywall(); 
-  }
-}
-
-initApp();
 </script>
 
 </body>
