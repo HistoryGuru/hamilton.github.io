@@ -249,7 +249,7 @@
 
 <div class="bg-white/90 p-6 rounded border-2 border-slate-300 shadow-lg">
     <h2 class="text-xl font-semibold text-slate-900 mb-3">Generated Case</h2>
-    <div class="bg-white p-4 h-96 rounded overflow-y-auto border-2 border-slate-300">
+    <div class="bg-white p-4 rounded overflow-y-auto border-2 border-slate-300" style="height: 800px; max-height: 800px;">
         <div id="caseOutput" class="text-slate-900">
             <p class="text-slate-500 italic">Your generated case will appear here…</p>
         </div>
@@ -494,26 +494,31 @@ For each contention/focus point, create the EXACT number of evidence cards speci
 
 <div class="debate-card">
 <span class="tag"><strong>[Compelling Tag Line]</strong></span>
-<p class="cite"><span class="author">Author</span> '<span class="year">YY</span> <span class="qualification">[Full credentials, title, institution, date, publication/source]</span></p>
+<p class="cite"><span class="author">Author</span> '<span class="year">YY</span> [Full name, credentials/title, organization/institution, Year-Month-Day, "Article Title", Website/Publication, URL, Date Accessed] [Cut by Hamilton Debate-LQ]</p>
 <div class="card-text">
 <span class="shrunk">[Less important context text in smaller font] </span><mark><u><strong>the most crucial points are highlighted</strong></u></mark><span class="shrunk"> [more context] </span><mark><u>and key evidence is marked</u></mark><span class="shrunk"> [concluding context]</span>. <mark><u><strong>The highlighted text must flow smoothly</strong></u></mark><span class="shrunk"> and form complete arguments when read alone.</span>
 </div>
 </div>
 
+CITATION FORMAT EXAMPLE:
+Smith '23 [Dr. Jane Smith, Professor of Environmental Science at Stanford University, 2023-08-15, "Climate Change Impacts", Nature Journal, https://nature.com/climate-impacts, Accessed 2024-01-03] [Cut by Hamilton Debate-LQ]
+
 REQUIREMENTS:
 1. Use <strong> for bold, <u> for underline, <mark> for highlighting
 2. Apply <span class="shrunk"> to less important text
 3. Highlight ONLY the most important phrases that flow together
-4. Format citation as: Author 'YY [full qualifications]
-5. Include full article context but shrink unimportant parts
-6. Highlighted portions should read smoothly on their own
-7. Use all three formatting types (bold, underline, highlight) strategically
-8. CREATE EXACTLY THE NUMBER OF CARDS SPECIFIED FOR EACH FOCUS POINT - DO NOT CREATE FEWER!
+4. Format citation EXACTLY as: Author 'YY [Full credentials, date published, "Title", publication, URL if online, date accessed] [Cut by Hamilton Debate-LQ]
+5. ALWAYS include URL and date accessed for online sources
+6. Include full article context but shrink unimportant parts
+7. Highlighted portions should read smoothly on their own
+8. Use all three formatting types (bold, underline, highlight) strategically
+9. CREATE EXACTLY THE NUMBER OF CARDS SPECIFIED FOR EACH FOCUS POINT - DO NOT CREATE FEWER!
+10. End EVERY citation with [Cut by Hamilton Debate-LQ]
 
 Focus Points and REQUIRED Card Counts:
 ${focusPoints.map((fp, i) => `FOCUS POINT ${i+1}: "${fp.point}" - YOU MUST CREATE EXACTLY ${fp.cards} EVIDENCE CARDS FOR THIS POINT`).join('\n')}
 
-REMINDER: You must generate ${focusPoints.reduce((sum, fp) => sum + fp.cards, 0)} total evidence cards. Generate ALL of them with proper HTML formatting.`;
+REMINDER: You must generate ${focusPoints.reduce((sum, fp) => sum + fp.cards, 0)} total evidence cards. Generate ALL of them with proper HTML formatting and complete citations including URLs and access dates.`;
 
     try {
         const text = await callAI(
