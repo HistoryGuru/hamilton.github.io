@@ -106,21 +106,22 @@
 </style>
 </head>
 
-<body class="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-6">
-<div class="max-w-6xl mx-auto pb-16">
+<body class="min-h-screen p-6" style="background: linear-gradient(135deg, #f4a03c 0%, #e8952e 50%, #f4a03c 100%); position: relative;">
+<div style="position: absolute; top: 50%; right: 5%; width: 300px; height: 400px; background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0xNTAgMjAwYzAgMCAwIDAgMCAweiIgZmlsbD0iI0ZGRiIvPjwvZz48L3N2Zz4='); background-size: contain; background-repeat: no-repeat; opacity: 0.3; pointer-events: none;"></div>
+<div class="max-w-6xl mx-auto pb-16" style="position: relative; z-index: 1;">
 
 <header class="text-center mb-8">
-    <h1 class="text-5xl font-bold text-amber-400">Hamilton</h1>
-    <p class="text-slate-300">Intelligent Debate Speech Generator</p>
-    <p class="text-slate-400 text-sm mt-2" id="planIndicator">Novice Plan (Free)</p>
+    <h1 class="text-5xl font-bold text-slate-900">Hamilton</h1>
+    <p class="text-slate-800">Intelligent Debate Speech Generator</p>
+    <p class="text-slate-700 text-sm mt-2" id="planIndicator">Novice Plan (Free)</p>
 </header>
 
 <!-- Tabs -->
 <div class="flex gap-4 mb-6 justify-center">
-    <button id="counterTab" class="px-6 py-3 rounded bg-slate-800 text-slate-300">
+    <button id="counterTab" class="px-6 py-3 rounded bg-white/80 text-slate-900 font-semibold border-2 border-slate-300">
         Counter-Speech Generator
     </button>
-    <button id="caseTab" class="px-6 py-3 rounded bg-amber-500 text-slate-900 font-semibold">
+    <button id="caseTab" class="px-6 py-3 rounded bg-slate-900 text-white font-semibold border-2 border-slate-900">
         Write Me a Case
     </button>
 </div>
@@ -130,42 +131,42 @@
 <div class="grid md:grid-cols-2 gap-6">
 
 <!-- INPUT -->
-<div class="bg-slate-800/50 p-6 rounded border border-slate-700">
-    <h2 class="text-xl font-semibold text-amber-400 mb-3">Case Input</h2>
+<div class="bg-white/90 p-6 rounded border-2 border-slate-300 shadow-lg">
+    <h2 class="text-xl font-semibold text-slate-900 mb-3">Case Input</h2>
 
     <div id="caseInput" contenteditable
-        class="bg-slate-900 h-64 p-4 rounded border border-slate-600 text-slate-100 overflow-y-auto"
+        class="bg-white h-64 p-4 rounded border-2 border-slate-300 text-slate-900 overflow-y-auto"
         data-placeholder="Paste your formatted debate case here...">
     </div>
 
-    <label class="block text-slate-300 mt-4">
+    <label class="block text-slate-900 mt-4">
         Speech Length: <span id="speechLengthDisplay">3</span> minutes
     </label>
     <input id="speechLength" type="range" min="1" max="8" value="3" class="w-full">
 
     <div class="mt-4">
-        <label class="block text-slate-300 mb-2">Response Format:</label>
+        <label class="block text-slate-900 mb-2">Response Format:</label>
         <div class="flex gap-2">
-            <button id="paragraphBtn" class="flex-1 bg-amber-500 py-2 rounded font-semibold text-slate-900">
+            <button id="paragraphBtn" class="flex-1 bg-slate-900 py-2 rounded font-semibold text-white border-2 border-slate-900">
                 Paragraph
             </button>
-            <button id="caseResponseBtn" class="flex-1 bg-slate-700 py-2 rounded text-slate-300">
+            <button id="caseResponseBtn" class="flex-1 bg-white py-2 rounded text-slate-900 border-2 border-slate-300">
                 Evidence Case
             </button>
         </div>
     </div>
 
     <button id="generateCounterBtn"
-        class="w-full mt-4 bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-3 rounded">
+        class="w-full mt-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 rounded">
         Generate Counter-Speech
     </button>
 </div>
 
 <!-- OUTPUT -->
-<div class="bg-slate-800/50 p-6 rounded border border-slate-700">
-    <h2 class="text-xl font-semibold text-amber-400 mb-3">Counter-Speech</h2>
-    <div class="bg-white p-4 h-96 rounded overflow-y-auto border border-slate-600">
-        <p id="counterOutput" class="text-slate-400 italic">
+<div class="bg-white/90 p-6 rounded border-2 border-slate-300 shadow-lg">
+    <h2 class="text-xl font-semibold text-slate-900 mb-3">Counter-Speech</h2>
+    <div class="bg-white p-4 h-96 rounded overflow-y-auto border-2 border-slate-300">
+        <p id="counterOutput" class="text-slate-500 italic">
             Your generated counter-speech will appear here…
         </p>
     </div>
@@ -178,51 +179,51 @@
 <div id="caseSection">
 <div class="grid md:grid-cols-2 gap-6">
 
-<div class="bg-slate-800/50 p-6 rounded border border-slate-700">
+<div class="bg-white/90 p-6 rounded border-2 border-slate-300 shadow-lg">
     <input id="topic"
-        class="w-full p-3 bg-slate-900 border border-slate-600 rounded text-slate-100"
+        class="w-full p-3 bg-white border-2 border-slate-300 rounded text-slate-900"
         placeholder="Topic / Resolution">
 
     <div class="flex gap-2 mt-3">
-        <button id="affBtn" class="flex-1 bg-amber-500 py-2 rounded font-semibold text-slate-900">
+        <button id="affBtn" class="flex-1 bg-slate-900 py-2 rounded font-semibold text-white border-2 border-slate-900">
             Affirmative
         </button>
-        <button id="negBtn" class="flex-1 bg-slate-700 py-2 rounded text-slate-300">
+        <button id="negBtn" class="flex-1 bg-white py-2 rounded text-slate-900 border-2 border-slate-300">
             Negative
         </button>
     </div>
 
     <input id="focusPoint1"
-        class="w-full mt-3 p-3 bg-slate-900 border border-slate-600 rounded text-slate-100"
+        class="w-full mt-3 p-3 bg-white border-2 border-slate-300 rounded text-slate-900"
         placeholder="Focus Point 1 (Required)">
 
     <div class="flex items-center gap-2 mt-2">
-        <label class="text-slate-300 text-sm">Cards:</label>
+        <label class="text-slate-900 text-sm">Cards:</label>
         <input id="cardsPerPoint1" type="number" min="1" max="5" value="2"
-            class="w-16 p-1 bg-slate-900 border border-slate-600 rounded text-slate-100 text-center">
+            class="w-16 p-1 bg-white border-2 border-slate-300 rounded text-slate-900 text-center">
     </div>
 
     <input id="focusPoint2"
-        class="w-full mt-3 p-3 bg-slate-900 border border-slate-600 rounded text-slate-100"
+        class="w-full mt-3 p-3 bg-white border-2 border-slate-300 rounded text-slate-900"
         placeholder="Focus Point 2 (Optional)">
 
     <div class="flex items-center gap-2 mt-2">
-        <label class="text-slate-300 text-sm">Cards:</label>
+        <label class="text-slate-900 text-sm">Cards:</label>
         <input id="cardsPerPoint2" type="number" min="1" max="5" value="2"
-            class="w-16 p-1 bg-slate-900 border border-slate-600 rounded text-slate-100 text-center">
+            class="w-16 p-1 bg-white border-2 border-slate-300 rounded text-slate-900 text-center">
     </div>
 
     <button id="generateCaseBtn"
-        class="w-full mt-4 bg-amber-500 hover:bg-amber-600 py-3 rounded font-semibold text-slate-900">
+        class="w-full mt-4 bg-slate-900 hover:bg-slate-800 py-3 rounded font-semibold text-white">
         Generate Case
     </button>
 </div>
 
-<div class="bg-slate-800/50 p-6 rounded border border-slate-700">
-    <h2 class="text-xl font-semibold text-amber-400 mb-3">Generated Case</h2>
-    <div class="bg-white p-4 h-96 rounded overflow-y-auto border border-slate-600">
-        <div id="caseOutput" class="text-slate-500 italic">
-            Your generated case will appear here…
+<div class="bg-white/90 p-6 rounded border-2 border-slate-300 shadow-lg">
+    <h2 class="text-xl font-semibold text-slate-900 mb-3">Generated Case</h2>
+    <div class="bg-white p-4 h-96 rounded overflow-y-auto border-2 border-slate-300">
+        <div id="caseOutput" class="text-slate-900">
+            <p class="text-slate-500 italic">Your generated case will appear here…</p>
         </div>
     </div>
 </div>
@@ -234,18 +235,18 @@
 
 <!-- Upgrade Modal -->
 <div id="upgradeModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content max-w-md">
-        <h2 class="text-2xl font-bold text-amber-400 text-center mb-4">Upgrade Required</h2>
-        <p class="text-slate-300 text-center mb-6" id="upgradeMessage"></p>
-        <button class="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded" onclick="closeUpgradeModal()">
+    <div class="modal-content max-w-md" style="background: white; border: 2px solid #1e293b;">
+        <h2 class="text-2xl font-bold text-slate-900 text-center mb-4">Upgrade Required</h2>
+        <p class="text-slate-700 text-center mb-6" id="upgradeMessage"></p>
+        <button class="w-full bg-slate-900 hover:bg-slate-800 text-white py-2 rounded" onclick="closeUpgradeModal()">
             Close
         </button>
     </div>
 </div>
 
 <!-- Footer -->
-<footer class="fixed bottom-0 left-0 right-0 bg-slate-900/90 border-t border-slate-700 py-2 text-center">
-    <p class="text-slate-400 text-sm">All Code by Leroy Qu</p>
+<footer class="fixed bottom-0 left-0 right-0 bg-slate-900/90 border-t-2 border-slate-900 py-2 text-center">
+    <p class="text-white text-sm">All Code by Leroy Qu</p>
 </footer>
 
 <script>
@@ -323,15 +324,15 @@ async function callAI(system, user, maxTokens = 1200) {
 document.getElementById('counterTab').onclick = () => {
     document.getElementById('counterSection').classList.remove("hidden");
     document.getElementById('caseSection').classList.add("hidden");
-    document.getElementById('counterTab').className = "px-6 py-3 rounded bg-amber-500 text-slate-900 font-semibold";
-    document.getElementById('caseTab').className = "px-6 py-3 rounded bg-slate-800 text-slate-300";
+    document.getElementById('counterTab').className = "px-6 py-3 rounded bg-slate-900 text-white font-semibold border-2 border-slate-900";
+    document.getElementById('caseTab').className = "px-6 py-3 rounded bg-white/80 text-slate-900 font-semibold border-2 border-slate-300";
 };
 
 document.getElementById('caseTab').onclick = () => {
     document.getElementById('caseSection').classList.remove("hidden");
     document.getElementById('counterSection').classList.add("hidden");
-    document.getElementById('caseTab').className = "px-6 py-3 rounded bg-amber-500 text-slate-900 font-semibold";
-    document.getElementById('counterTab').className = "px-6 py-3 rounded bg-slate-800 text-slate-300";
+    document.getElementById('caseTab').className = "px-6 py-3 rounded bg-slate-900 text-white font-semibold border-2 border-slate-900";
+    document.getElementById('counterTab').className = "px-6 py-3 rounded bg-white/80 text-slate-900 font-semibold border-2 border-slate-300";
 };
 
 /* =========================================================
@@ -341,14 +342,14 @@ let responseFormat = "paragraph"; // "paragraph" or "case"
 
 document.getElementById('paragraphBtn').onclick = () => {
     responseFormat = "paragraph";
-    document.getElementById('paragraphBtn').className = "flex-1 bg-amber-500 py-2 rounded font-semibold text-slate-900";
-    document.getElementById('caseResponseBtn').className = "flex-1 bg-slate-700 py-2 rounded text-slate-300";
+    document.getElementById('paragraphBtn').className = "flex-1 bg-slate-900 py-2 rounded font-semibold text-white border-2 border-slate-900";
+    document.getElementById('caseResponseBtn').className = "flex-1 bg-white py-2 rounded text-slate-900 border-2 border-slate-300";
 };
 
 document.getElementById('caseResponseBtn').onclick = () => {
     responseFormat = "case";
-    document.getElementById('caseResponseBtn').className = "flex-1 bg-amber-500 py-2 rounded font-semibold text-slate-900";
-    document.getElementById('paragraphBtn').className = "flex-1 bg-slate-700 py-2 rounded text-slate-300";
+    document.getElementById('caseResponseBtn').className = "flex-1 bg-slate-900 py-2 rounded font-semibold text-white border-2 border-slate-900";
+    document.getElementById('paragraphBtn').className = "flex-1 bg-white py-2 rounded text-slate-900 border-2 border-slate-300";
 };
 
 document.getElementById('speechLength').oninput = e =>
@@ -423,10 +424,11 @@ Generate the counter-case with proper HTML formatting.`;
         
         if (responseFormat === "case") {
             counterOutput.innerHTML = text;
+            counterOutput.className = "text-slate-900";
         } else {
             counterOutput.innerText = text;
+            counterOutput.className = "text-slate-900";
         }
-        counterOutput.className = "text-slate-100";
     } catch (err) {
         counterOutput.innerText = `Error: ${err.message}`;
         counterOutput.className = "text-red-400";
@@ -440,14 +442,14 @@ let side = "Aff";
 
 document.getElementById('affBtn').onclick = () => {
     side = "Aff";
-    document.getElementById('affBtn').className = "flex-1 bg-amber-500 py-2 rounded font-semibold text-slate-900";
-    document.getElementById('negBtn').className = "flex-1 bg-slate-700 py-2 rounded text-slate-300";
+    document.getElementById('affBtn').className = "flex-1 bg-slate-900 py-2 rounded font-semibold text-white border-2 border-slate-900";
+    document.getElementById('negBtn').className = "flex-1 bg-white py-2 rounded text-slate-900 border-2 border-slate-300";
 };
 
 document.getElementById('negBtn').onclick = () => {
     side = "Neg";
-    document.getElementById('negBtn').className = "flex-1 bg-amber-500 py-2 rounded font-semibold text-slate-900";
-    document.getElementById('affBtn').className = "flex-1 bg-slate-700 py-2 rounded text-slate-300";
+    document.getElementById('negBtn').className = "flex-1 bg-slate-900 py-2 rounded font-semibold text-white border-2 border-slate-900";
+    document.getElementById('affBtn').className = "flex-1 bg-white py-2 rounded text-slate-900 border-2 border-slate-300";
 };
 
 document.getElementById('generateCaseBtn').onclick = async () => {
@@ -525,6 +527,7 @@ Generate the complete case with proper HTML formatting.`;
             3000
         );
         caseOutput.innerHTML = text;
+        caseOutput.className = "text-slate-900";
     } catch (err) {
         caseOutput.innerHTML = `<p class="text-red-500">Error: ${err.message}</p>`;
     }
