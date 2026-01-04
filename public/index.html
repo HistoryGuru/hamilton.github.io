@@ -594,10 +594,12 @@ document.getElementById('generateCaseBtn').onclick = async () => {
     }
 
     const totalCards = focusPoints.reduce((sum,fp)=>sum+fp.cards,0);
-    const prompt = "Write a "+side+" debate case on: "+topic.value+"\n\nCreate EXACTLY "+totalCards+" UNIQUE evidence cards total (NO DUPLICATES). Each card MUST have a different argument and different source.\n\nFocus Points:\n"+focusPoints.map((fp,i)=>(i+1)+". "+fp.point+" ("+fp.cards+" unique cards with DIFFERENT sources)").join("\n")+"\n\nIMPORTANT: DO NOT repeat any sources, authors, or arguments. Each card must be completely distinct.\n\nFor each card:\n- Include a clear tag line wrapped in <div class='tag'>TAG HERE</div>\n- Include FULL citation wrapped in <div class='cite'>CITATION HERE</div> with author name, year, credentials/publication, article title, and URL\n- Include evidence text wrapped in <div class='card-text'>EVIDENCE HERE</div>\n- Use <mark> tags for highlighting key phrases (NOT ** symbols)\n- Use <strong> tags for bold text\n- Use <u> tags for underlined text\n- MUST end with [Cut by Hamilton Debate-LQ] inside the card-text div\n- Wrap each complete card in <div class='debate-card'>...</div>\n\nExample format:\n<div class='debate-card'>\n  <div class='tag'>Your tag here</div>\n  <div class='cite'>Author '16 (credentials) \"Article Title\" URL</div>\n  <div class='card-text'>The <mark><strong>highlighted and bold text</strong></mark> continues here. Regular text. <u>Underlined text</u>. [Cut by Hamilton Debate-LQ]</div>\n</div>\n\nVerify each card has: 1) Unique source 2) Unique argument 3) [Cut by Hamilton Debate-LQ] at the end.";
+    const prompt = "Write a "+side+" debate case on: "+topic.value+"\n\nCreate EXACTLY "+totalCards+" UNIQUE evidence cards total (NO DUPLICATES). Each card MUST have a different argument and different source.\n\nFocus Points:\n"+focusPoints.map((fp,i)=>(i+1)+". "+fp.point+" ("+fp.cards+" unique cards with DIFFERENT sources)").join("\n")+"\n\nIMPORTANT: DO NOT repeat any sources, authors, or arguments. Each card must be completely distinct.\n\nFor each card:\n- Include a clear tag line wrapped in <div class='tag'>TAG HERE</div>\n- Include FULL citation wrapped in <div class='cite'>CITATION HERE [Cut by Hamilton Debate-LQ]</div> with author name, year, credentials/publication, article title, URL, and ending with [Cut by Hamilton Debate-LQ]\n- Include evidence text wrapped in <div class='card-text'>EVIDENCE HERE</div> (NO [Cut by Hamilton Debate-LQ] here)\n- Use <mark> tags for highlighting key phrases (NOT ** symbols)\n- Use <strong> tags for bold text  \n- Use <u> tags for underlined text\n- Wrap each complete card in <div class='debate-card'>...</div>\n- DO NOT include any text outside the debate-card divs\n\nExample format:\n<div class='debate-card'>\n  <div class='tag'>Nuclear accidents cause catastrophic long-term contamination</div>\n  <div class='cite'>Steinberg '21 (Mark Steinberg, Nuclear Safety Engineer) \"Fukushima's Lasting Legacy\" Nuclear Safety Quarterly https://www.example.com [Cut by Hamilton Debate-LQ]</div>\n  <div class='card-text'>The <mark><strong>Fukushima disaster demonstrates that nuclear accidents create contamination zones lasting centuries</strong></mark>. Even ten years after the meltdown, <u>radiation levels in the exclusion zone remain dangerously high</u>, forcing permanent evacuation of entire communities.</div>\n</div>\n\nVerify each card has: 1) Unique source 2) Unique argument 3) [Cut by Hamilton Debate-LQ] at END of cite div 4) NO extra text outside debate-card divs.";
 
     try {
-        const html = await callAI("You are an expert debate case writer. Create unique, non-duplicate evidence cards with complete citations including URLs.",prompt,4000);
+        const html = await callAI("You are an expert debate case writer. Create unique, non-duplicate evidence cards with complete citations including URLs. Output ONLY the debate-card HTML divs with no additional text before or after.",prompt,4000);
+        
+        // Clean up any text outside debate-card divs
         const temp = document.createElement("div");
         temp.innerHTML = html;
         
@@ -606,7 +608,9 @@ document.getElementById('generateCaseBtn').onclick = async () => {
         const uniqueCards = [];
         const seenContent = new Set();
         
-        cards.forEach(card => {
+        console.log("Raw cards found:", cards.length);
+        
+        cards.forEach((card, idx) => {
             const tag = card.querySelector(".tag")?.innerText || "";
             const cite = card.querySelector(".cite")?.innerText || "";
             const cardText = card.querySelector(".card-text")?.innerText || "";
@@ -615,14 +619,17 @@ document.getElementById('generateCaseBtn').onclick = async () => {
             const authorMatch = cite.match(/^([^']+)/); // Get author before year
             const key = tag.toLowerCase().trim() + "|" + (authorMatch ? authorMatch[1].toLowerCase().trim() : cite.toLowerCase().trim());
             
-            // Only add if we haven't seen this combination AND the card has content
+            // Only add if we haven't seen this combination AND the card has all required content
             if (!seenContent.has(key) && tag.trim() && cite.trim() && cardText.trim()) {
                 seenContent.add(key);
                 uniqueCards.push(card);
+                console.log("Added card", idx+1, ":", tag.substring(0,50));
+            } else {
+                console.log("Skipped duplicate/invalid card", idx+1);
             }
         });
         
-        console.log("Total cards generated:", cards.length, "Unique cards:", uniqueCards.length);
+        console.log("Total cards generated:", cards.length, "Unique valid cards:", uniqueCards.length);
         
         // Rebuild HTML with unique cards only
         const rebuiltHtml = uniqueCards.map(c=>c.outerHTML).join("");
