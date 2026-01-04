@@ -603,10 +603,19 @@ document.getElementById('generateCaseBtn').onclick = async () => {
         const temp = document.createElement("div");
         temp.innerHTML = html;
         
+        // Remove all text nodes and elements that aren't debate-cards
+        const allNodes = Array.from(temp.childNodes);
+        allNodes.forEach(node => {
+            if (node.nodeType === Node.TEXT_NODE || !node.classList?.contains('debate-card')) {
+                node.remove();
+            }
+        });
+        
         // Remove duplicate cards by comparing tags and citations
         const cards = temp.querySelectorAll(".debate-card");
         const uniqueCards = [];
-        const seenContent = new Set();
+        const seenAuthors = new Set();
+        const seenTags = new Set();
         
         console.log("Raw cards found:", cards.length);
         
@@ -615,18 +624,28 @@ document.getElementById('generateCaseBtn').onclick = async () => {
             const cite = card.querySelector(".cite")?.innerText || "";
             const cardText = card.querySelector(".card-text")?.innerText || "";
             
-            // Create a more robust uniqueness key using tag + author from citation
-            const authorMatch = cite.match(/^([^']+)/); // Get author before year
-            const key = tag.toLowerCase().trim() + "|" + (authorMatch ? authorMatch[1].toLowerCase().trim() : cite.toLowerCase().trim());
+            // Extract author name (everything before the year)
+            const authorMatch = cite.match(/^([^']+)'(\d{2})/);
+            const authorName = authorMatch ? authorMatch[1].trim().toLowerCase() : "";
+            const tagLower = tag.toLowerCase().trim();
             
-            // Only add if we haven't seen this combination AND the card has all required content
-            if (!seenContent.has(key) && tag.trim() && cite.trim() && cardText.trim()) {
-                seenContent.add(key);
-                uniqueCards.push(card);
-                console.log("Added card", idx+1, ":", tag.substring(0,50));
-            } else {
-                console.log("Skipped duplicate/invalid card", idx+1);
+            // Skip if missing required content
+            if (!tag.trim() || !cite.trim() || !cardText.trim()) {
+                console.log("Skipped card", idx+1, "- missing required content");
+                return;
             }
+            
+            // Skip if we've seen this author OR this exact tag
+            if (seenAuthors.has(authorName) || seenTags.has(tagLower)) {
+                console.log("Skipped duplicate card", idx+1, "- Author:", authorName, "Tag:", tag.substring(0,40));
+                return;
+            }
+            
+            // Add to unique cards
+            seenAuthors.add(authorName);
+            seenTags.add(tagLower);
+            uniqueCards.push(card);
+            console.log("Added card", idx+1, "- Author:", authorName);
         });
         
         console.log("Total cards generated:", cards.length, "Unique valid cards:", uniqueCards.length);
