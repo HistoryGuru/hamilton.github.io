@@ -583,7 +583,7 @@ document.getElementById('generateCaseBtn').onclick = async () => {
     ];
     
     const randomFact = debateFacts[Math.floor(Math.random() * debateFacts.length)];
-    caseOutput.innerHTML = "<p class='text-slate-700'><strong>🔄 Loading:</strong> " + randomFact + "</p>";
+    caseOutput.innerHTML = "<p class='text-slate-700'><strong>🔄 Loading... Fun Fact:</strong> " + randomFact + "</p>";
 
     const focusPoints = [];
     if (focusPoint1.value.trim()) {
@@ -594,7 +594,7 @@ document.getElementById('generateCaseBtn').onclick = async () => {
     }
 
     const totalCards = focusPoints.reduce((sum,fp)=>sum+fp.cards,0);
-    const prompt = "Write a "+side+" debate case on: "+topic.value+"\n\nCreate EXACTLY "+totalCards+" UNIQUE evidence cards total (NO DUPLICATES).\n\nFocus Points:\n"+focusPoints.map((fp,i)=>(i+1)+". "+fp.point+" ("+fp.cards+" unique cards)").join("\n")+"\n\nFor each card:\n- Include a clear tag line\n- Include FULL citation with author name, year, credentials/publication, article title, and URL\n- Include evidence text with proper highlighting\n- Add [Cut by Hamilton Debate-LQ] at the end\n- Use proper HTML with debate-card class\n\nEnsure each card is completely unique with different sources and arguments.";
+    const prompt = "Write a "+side+" debate case on: "+topic.value+"\n\nCreate EXACTLY "+totalCards+" UNIQUE evidence cards total (NO DUPLICATES).\n\nFocus Points:\n"+focusPoints.map((fp,i)=>(i+1)+". "+fp.point+" ("+fp.cards+" unique cards)").join("\n")+"\n\nFor each card:\n- Include a clear tag line wrapped in <div class='tag'>TAG HERE</div>\n- Include FULL citation wrapped in <div class='cite'>CITATION HERE</div> with author name, year, credentials/publication, article title, and URL\n- Include evidence text wrapped in <div class='card-text'>EVIDENCE HERE</div>\n- Use <mark> tags for highlighting key phrases (NOT ** symbols)\n- Use <strong> tags for bold text\n- Use <u> tags for underlined text\n- Add [Cut by Hamilton Debate-LQ] at the end of each card\n- Wrap each complete card in <div class='debate-card'>...</div>\n\nExample format:\n<div class='debate-card'>\n  <div class='tag'>Your tag here</div>\n  <div class='cite'>Author '16 (credentials) \"Article Title\" URL</div>\n  <div class='card-text'>The <mark><strong>highlighted and bold text</strong></mark> continues here. Regular text. <u>Underlined text</u>. [Cut by Hamilton Debate-LQ]</div>\n</div>\n\nEnsure each card is completely unique with different sources and arguments.";
 
     try {
         const html = await callAI("You are an expert debate case writer. Create unique, non-duplicate evidence cards with complete citations including URLs.",prompt,4000);
