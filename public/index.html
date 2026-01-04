@@ -49,6 +49,17 @@
     padding: 0;
 }
 
+/* Remove white/transparent highlighting */
+.debate-card mark[style*="background-color: white"],
+.debate-card mark[style*="background-color: #fff"],
+.debate-card mark[style*="background-color: #ffffff"],
+.debate-card mark[style*="background: white"],
+.debate-card mark[style*="background: #fff"],
+.debate-card mark[style*="background: #ffffff"] {
+    background-color: transparent !important;
+    background: transparent !important;
+}
+
 .debate-card u {
     text-decoration: underline;
 }
@@ -132,6 +143,18 @@
     </label>
     <input id="speechLength" type="range" min="1" max="8" value="3" class="w-full">
 
+    <div class="mt-4">
+        <label class="block text-slate-300 mb-2">Response Format:</label>
+        <div class="flex gap-2">
+            <button id="paragraphBtn" class="flex-1 bg-amber-500 py-2 rounded font-semibold text-slate-900">
+                Paragraph
+            </button>
+            <button id="caseResponseBtn" class="flex-1 bg-slate-700 py-2 rounded text-slate-300">
+                Evidence Case
+            </button>
+        </div>
+    </div>
+
     <button id="generateCounterBtn"
         class="w-full mt-4 bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-3 rounded">
         Generate Counter-Speech
@@ -141,7 +164,7 @@
 <!-- OUTPUT -->
 <div class="bg-slate-800/50 p-6 rounded border border-slate-700">
     <h2 class="text-xl font-semibold text-amber-400 mb-3">Counter-Speech</h2>
-    <div class="bg-slate-900 p-4 h-96 rounded overflow-y-auto border border-slate-600">
+    <div class="bg-white p-4 h-96 rounded overflow-y-auto border border-slate-600">
         <p id="counterOutput" class="text-slate-400 italic">
             Your generated counter-speech will appear here…
         </p>
@@ -314,6 +337,20 @@ document.getElementById('caseTab').onclick = () => {
 /* =========================================================
    COUNTER SPEECH
    ========================================================= */
+let responseFormat = "paragraph"; // "paragraph" or "case"
+
+document.getElementById('paragraphBtn').onclick = () => {
+    responseFormat = "paragraph";
+    document.getElementById('paragraphBtn').className = "flex-1 bg-amber-500 py-2 rounded font-semibold text-slate-900";
+    document.getElementById('caseResponseBtn').className = "flex-1 bg-slate-700 py-2 rounded text-slate-300";
+};
+
+document.getElementById('caseResponseBtn').onclick = () => {
+    responseFormat = "case";
+    document.getElementById('caseResponseBtn').className = "flex-1 bg-amber-500 py-2 rounded font-semibold text-slate-900";
+    document.getElementById('paragraphBtn').className = "flex-1 bg-slate-700 py-2 rounded text-slate-300";
+};
+
 document.getElementById('speechLength').oninput = e =>
     document.getElementById('speechLengthDisplay').textContent = e.target.value;
 
@@ -332,19 +369,63 @@ document.getElementById('generateCounterBtn').onclick = async () => {
     counterOutput.textContent = "Generating…";
     counterOutput.className = "text-slate-400 italic";
 
-    const prompt = `Generate a ${speechLength.value}-minute rebuttal speech against the following case:
+    let prompt, systemPrompt;
+
+    if (responseFormat === "paragraph") {
+        // Traditional paragraph response
+        prompt = `Generate a ${speechLength.value}-minute rebuttal speech against the following case:
 
 ${caseInput.innerText}
 
 Be structured, analytical, and persuasive.`;
+        systemPrompt = "You are a high-level debate coach.";
+    } else {
+        // Case-style response with evidence cards
+        prompt = `You are responding to the following debate case. Generate a counter-case with evidence cards that refutes their arguments.
+
+OPPONENT'S CASE:
+${caseInput.innerText}
+
+CRITICAL FORMATTING REQUIREMENTS:
+
+Create HALF the number of evidence cards as the opponent's case (aim for 2-4 cards total). Each card should directly refute a key argument from their case.
+
+Use this EXACT format for each evidence card:
+
+<div class="debate-card">
+<span class="tag"><strong>[Refutation Tag - what you're countering]</strong></span>
+<p class="cite"><span class="author">Author</span> '<span class="year">YY</span> <span class="qualification">[Full credentials, title, institution, date, publication/source]</span></p>
+<div class="card-text">
+<span class="shrunk">[Less important context text in smaller font] </span><mark><u><strong>the most crucial counterarguments are highlighted</strong></u></mark><span class="shrunk"> [more context] </span><mark><u>and key refutations are marked</u></mark><span class="shrunk"> [concluding context]</span>. <mark><u><strong>The highlighted text must flow smoothly</strong></u></mark><span class="shrunk"> and form complete arguments when read alone.</span>
+</div>
+</div>
+
+REQUIREMENTS:
+1. Use <strong> for bold, <u> for underline, <mark> for highlighting
+2. Apply <span class="shrunk"> to less important text
+3. Highlight ONLY the most important phrases that flow together
+4. Format citation as: Author 'YY [full qualifications]
+5. Include full article context but shrink unimportant parts
+6. Highlighted portions should read smoothly on their own
+7. Keep it CONCISE - about half the length of their case
+8. Each card should directly refute one of their main arguments
+
+Generate the counter-case with proper HTML formatting.`;
+        systemPrompt = "You are an expert debate case writer who creates compelling refutations with properly formatted evidence cards.";
+    }
 
     try {
         const text = await callAI(
-            "You are a high-level debate coach.",
+            systemPrompt,
             prompt,
-            parseInt(speechLength.value) * 180
+            responseFormat === "paragraph" ? parseInt(speechLength.value) * 180 : 2000
         );
-        counterOutput.innerText = text;
+        
+        if (responseFormat === "case") {
+            counterOutput.innerHTML = text;
+        } else {
+            counterOutput.innerText = text;
+        }
         counterOutput.className = "text-slate-100";
     } catch (err) {
         counterOutput.innerText = `Error: ${err.message}`;
