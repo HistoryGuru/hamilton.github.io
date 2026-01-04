@@ -381,41 +381,73 @@ function exportCaseToDocx(html, topic) {
     temp.querySelectorAll(".debate-card").forEach((card, index) => {
         const tag = card.querySelector(".tag")?.innerText || "";
         if (tag !== currentContention) {
-            if (index !== 0) children.push(new Paragraph({children:[new PageBreak()]}));
+            if (index !== 0) {
+                children.push(new Paragraph(""));
+                children.push(new Paragraph({children:[new PageBreak()]}));
+                children.push(new Paragraph(""));
+            }
             currentContention = tag;
         }
-        children.push(new Paragraph({children:[new TextRun({text:tag,bold:true})],spacing:{after:200}}));
+        children.push(new Paragraph({children:[new TextRun({text:tag,bold:true,size:24})],spacing:{after:200}}));
 
         const cite = card.querySelector(".cite");
         if (cite) {
-            const text = cite.innerText;
-            const match = text.match(/^(.+?'\d{2})/);
-            children.push(new Paragraph({children:[
-                new TextRun({text:match?match[1]:text,bold:true,italics:true}),
-                new TextRun({text:match?text.replace(match[1],""):"",italics:true})
-            ],spacing:{after:200}}));
+            const fullText = cite.innerText;
+            const match = fullText.match(/^(.+?'\d{2})/);
+            if (match) {
+                children.push(new Paragraph({children:[
+                    new TextRun({text:match[1],bold:true,italics:true}),
+                    new TextRun({text:fullText.substring(match[1].length),italics:true})
+                ],spacing:{after:200}}));
+            } else {
+                children.push(new Paragraph({children:[
+                    new TextRun({text:fullText,italics:true})
+                ],spacing:{after:200}}));
+            }
         }
 
         const cardText = card.querySelector(".card-text");
         if (cardText) {
             const runs = [];
-            cardText.childNodes.forEach(node => {
-                const processNode = (n) => {
-                    if (n.nodeType === Node.TEXT_NODE) {
-                        if (n.textContent.trim()) runs.push(new TextRun({text:n.textContent}));
-                    } else if (n.nodeType === Node.ELEMENT_NODE) {
-                        const txt = n.textContent;
-                        if (!txt.trim()) return;
+            const processNode = (n, inherited = {}) => {
+                if (n.nodeType === Node.TEXT_NODE) {
+                    const txt = n.textContent;
+                    if (txt.trim()) {
                         runs.push(new TextRun({
                             text:txt,
-                            bold:n.tagName==="STRONG"||n.querySelector("strong"),
-                            underline:n.tagName==="U"||n.querySelector("u")?{}:undefined,
-                            highlight:n.tagName==="MARK"||n.querySelector("mark")?"cyan":undefined
+                            bold:inherited.bold,
+                            underline:inherited.underline?{}:undefined,
+                            highlight:inherited.highlight?"cyan":undefined
                         }));
                     }
-                };
-                processNode(node);
-            });
+                } else if (n.nodeType === Node.ELEMENT_NODE) {
+                    const isStrong = n.tagName==="STRONG" || inherited.bold;
+                    const isUnderline = n.tagName==="U" || inherited.underline;
+                    const isMark = n.tagName==="MARK" || inherited.highlight;
+                    
+                    if (n.childNodes.length > 0) {
+                        n.childNodes.forEach(child => {
+                            processNode(child, {
+                                bold:isStrong,
+                                underline:isUnderline,
+                                highlight:isMark
+                            });
+                        });
+                    } else {
+                        const txt = n.textContent;
+                        if (txt.trim()) {
+                            runs.push(new TextRun({
+                                text:txt,
+                                bold:isStrong,
+                                underline:isUnderline?{}:undefined,
+                                highlight:isMark?"cyan":undefined
+                            }));
+                        }
+                    }
+                }
+            };
+            
+            cardText.childNodes.forEach(node => processNode(node));
             if (runs.length>0) children.push(new Paragraph({children:runs}));
         }
         children.push(new Paragraph(""));
@@ -562,27 +594,46 @@ document.getElementById('generateCaseBtn').onclick = async () => {
     }
 
     const totalCards = focusPoints.reduce((sum,fp)=>sum+fp.cards,0);
-    const prompt = "Write a "+side+" debate case on: "+topic.value+"\n\nCreate EXACTLY "+totalCards+" evidence cards total.\n\nFocus Points:\n"+focusPoints.map((fp,i)=>(i+1)+". "+fp.point+" ("+fp.cards+" cards)").join("\n")+"\n\nUse proper HTML with debate-card class, highlighting, citations with URLs and [Cut by Hamilton Debate-LQ] tags.";
+    const prompt = "Write a "+side+" debate case on: "+topic.value+"\n\nCreate EXACTLY "+totalCards+" UNIQUE evidence cards total (NO DUPLICATES).\n\nFocus Points:\n"+focusPoints.map((fp,i)=>(i+1)+". "+fp.point+" ("+fp.cards+" unique cards)").join("\n")+"\n\nFor each card:\n- Include a clear tag line\n- Include FULL citation with author name, year, credentials/publication, article title, and URL\n- Include evidence text with proper highlighting\n- Add [Cut by Hamilton Debate-LQ] at the end\n- Use proper HTML with debate-card class\n\nEnsure each card is completely unique with different sources and arguments.";
 
     try {
-        const html = await callAI("You are an expert debate case writer.",prompt,3000);
+        const html = await callAI("You are an expert debate case writer. Create unique, non-duplicate evidence cards with complete citations including URLs.",prompt,4000);
         const temp = document.createElement("div");
         temp.innerHTML = html;
+        
+        // Remove duplicate cards by comparing tags and citations
         const cards = temp.querySelectorAll(".debate-card");
+        const uniqueCards = [];
+        const seenContent = new Set();
+        
+        cards.forEach(card => {
+            const tag = card.querySelector(".tag")?.innerText || "";
+            const cite = card.querySelector(".cite")?.innerText || "";
+            const key = tag.toLowerCase().trim() + "|" + cite.toLowerCase().trim();
+            
+            if (!seenContent.has(key)) {
+                seenContent.add(key);
+                uniqueCards.push(card);
+            }
+        });
+        
+        // Rebuild HTML with unique cards only
+        const rebuiltHtml = uniqueCards.map(c=>c.outerHTML).join("");
+        temp.innerHTML = rebuiltHtml;
 
-        if (cards.length>0) {
-            const escapedHtml = html.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        if (uniqueCards.length>0) {
+            const escapedHtml = rebuiltHtml.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
             const escapedTopic = topic.value.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
             
-            if (cards.length>15) {
-                caseOutput.innerHTML = Array.from(cards).slice(0,15).map(c=>c.outerHTML).join("")+
+            if (uniqueCards.length>15) {
+                caseOutput.innerHTML = Array.from(uniqueCards).slice(0,15).map(c=>c.outerHTML).join("")+
                     '<div class="mt-6 text-center">'+
-                    '<p class="text-slate-700 mb-3">Showing 15 of '+cards.length+' cards</p>'+
+                    '<p class="text-slate-700 mb-3">Showing 15 of '+uniqueCards.length+' cards</p>'+
                     '<button class="bg-slate-900 text-white px-6 py-3 rounded font-semibold hover:bg-slate-800" '+
                     'onclick="exportCaseToDocx(\''+escapedHtml+'\',\''+escapedTopic+'\'); this.textContent=\'Downloaded!\'; this.disabled=true;">'+
                     'Download Full Case (.docx)</button></div>';
             } else {
-                caseOutput.innerHTML = html+
+                caseOutput.innerHTML = rebuiltHtml+
                     '<div class="mt-6 text-center">'+
                     '<button class="bg-slate-900 text-white px-6 py-3 rounded font-semibold hover:bg-slate-800" '+
                     'onclick="exportCaseToDocx(\''+escapedHtml+'\',\''+escapedTopic+'\'); this.textContent=\'Downloaded!\'; this.disabled=true;">'+
