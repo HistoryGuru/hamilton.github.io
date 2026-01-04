@@ -7,6 +7,7 @@
 
 <script src="https://js.puter.com/v2/"></script>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 
 <style>
 [contenteditable]:empty:before {
@@ -261,17 +262,6 @@
 
 </div>
 
-<!-- Upgrade Modal -->
-<div id="upgradeModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content max-w-md">
-        <h2 class="text-2xl font-bold text-slate-900 text-center mb-4">Notice</h2>
-        <p class="text-slate-700 text-center mb-6" id="upgradeMessage"></p>
-        <button class="w-full bg-slate-900 hover:bg-slate-800 text-white py-2 rounded" onclick="closeUpgradeModal()">
-            Close
-        </button>
-    </div>
-</div>
-
 <!-- Footer -->
 <footer class="fixed bottom-0 left-0 right-0 bg-slate-900/90 border-t-2 border-slate-900 py-2 text-center">
     <p class="text-white text-sm">All Code by Leroy Qu</p>
@@ -318,6 +308,114 @@ async function callAI(system, user, maxTokens = 1200) {
         throw new Error("AI request failed: " + error.message);
     }
 }
+
+/* =========================================================
+   DOCX EXPORT — FULL FORMATTING
+   ========================================================= */
+function exportCaseToDocx(html, topic) {
+    const { Document, Paragraph, TextRun, Packer, PageBreak } = docx;
+
+    const safeName = topic
+        .trim()
+        .replace(/[^a-z0-9]+/gi, "_")
+        .toLowerCase();
+
+    const temp = document.createElement("div");
+    temp.innerHTML = html;
+
+    const children = [];
+    let currentContention = null;
+
+    temp.querySelectorAll(".debate-card").forEach((card, index) => {
+        const tag = card.querySelector(".tag")?.innerText || "";
+
+        if (tag !== currentContention) {
+            if (index !== 0) {
+                children.push(new Paragraph({ children: [new PageBreak()] }));
+            }
+            currentContention = tag;
+        }
+
+        children.push(
+            new Paragraph({
+                children: [
+                    new TextRun({ text: tag, bold: true })
+                ],
+                spacing: { after: 200 }
+            })
+        );
+
+        const cite = card.querySelector(".cite");
+        if (cite) {
+            const text = cite.innerText;
+            const match = text.match(/^(.+?'\d{2})/);
+
+            children.push(
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: match ? match[1] : text,
+                            bold: true,
+                            italics: true
+                        }),
+                        new TextRun({
+                            text: match ? text.replace(match[1], "") : "",
+                            italics: true
+                        })
+                    ],
+                    spacing: { after: 200 }
+                })
+            );
+        }
+
+        const cardText = card.querySelector(".card-text");
+        if (cardText) {
+            const runs = [];
+            
+            cardText.childNodes.forEach(node => {
+                const processNode = (n) => {
+                    if (n.nodeType === Node.TEXT_NODE) {
+                        if (n.textContent.trim()) {
+                            runs.push(new TextRun({ text: n.textContent }));
+                        }
+                    } else if (n.nodeType === Node.ELEMENT_NODE) {
+                        const txt = n.textContent;
+                        if (!txt.trim()) return;
+                        
+                        runs.push(new TextRun({
+                            text: txt,
+                            bold: n.tagName === "STRONG" || n.querySelector("strong"),
+                            underline: n.tagName === "U" || n.querySelector("u") ? {} : undefined,
+                            highlight: n.tagName === "MARK" || n.querySelector("mark") ? "cyan" : undefined
+                        }));
+                    }
+                };
+                processNode(node);
+            });
+
+            if (runs.length > 0) {
+                children.push(new Paragraph({ children: runs }));
+            }
+        }
+
+        children.push(new Paragraph(""));
+    });
+
+    const doc = new Document({
+        sections: [{ children }]
+    });
+
+    Packer.toBlob(doc).then(blob => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `${safeName}-hamiltonDebate.docx`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    });
+}
+
+// Make it globally accessible
+window.exportCaseToDocx = exportCaseToDocx;
 
 /* =========================================================
    TAB LOGIC
@@ -393,7 +491,7 @@ Use this EXACT format for each evidence card:
 
 <div class="debate-card">
 <span class="tag"><strong>[Refutation Tag - what you're countering]</strong></span>
-<p class="cite"><span class="author">Author</span> '<span class="year">YY</span> <span class="qualification">[Full credentials, title, institution, date, publication/source]</span></p>
+<p class="cite"><span class="author">Author</span> '<span class="year">YY</span> [Full credentials, title, institution, date, publication/source] [Cut by Hamilton Debate-LQ]</p>
 <div class="card-text">
 <span class="shrunk">[Less important context text in smaller font] </span><mark><u><strong>the most crucial counterarguments are highlighted</strong></u></mark><span class="shrunk"> [more context] </span><mark><u>and key refutations are marked</u></mark><span class="shrunk"> [concluding context]</span>. <mark><u><strong>The highlighted text must flow smoothly</strong></u></mark><span class="shrunk"> and form complete arguments when read alone.</span>
 </div>
@@ -403,7 +501,7 @@ REQUIREMENTS:
 1. Use <strong> for bold, <u> for underline, <mark> for highlighting
 2. Apply <span class="shrunk"> to less important text
 3. Highlight ONLY the most important phrases that flow together
-4. Format citation as: Author 'YY [full qualifications]
+4. Format citation as: Author 'YY [full qualifications] [Cut by Hamilton Debate-LQ]
 5. Include full article context but shrink unimportant parts
 6. Highlighted portions should read smoothly on their own
 7. Keep it CONCISE - about half the length of their case
@@ -484,6 +582,8 @@ document.getElementById('generateCaseBtn').onclick = async () => {
         });
     }
 
+    const totalCards = focusPoints.reduce((sum, fp) => sum + fp.cards, 0);
+
     const prompt = `You are an expert debate case writer. Write a complete ${side} debate case on: "${topic.value}"
 
 CRITICAL FORMATTING REQUIREMENTS:
@@ -518,23 +618,37 @@ REQUIREMENTS:
 Focus Points and REQUIRED Card Counts:
 ${focusPoints.map((fp, i) => `FOCUS POINT ${i+1}: "${fp.point}" - YOU MUST CREATE EXACTLY ${fp.cards} EVIDENCE CARDS FOR THIS POINT`).join('\n')}
 
-REMINDER: You must generate ${focusPoints.reduce((sum, fp) => sum + fp.cards, 0)} total evidence cards. Generate ALL of them with proper HTML formatting and complete citations including URLs and access dates.`;
+REMINDER: You must generate ${totalCards} total evidence cards. Generate ALL of them with proper HTML formatting and complete citations including URLs and access dates.`;
 
     try {
-        const text = await callAI(
+        const html = await callAI(
             "You are an expert debate case writer who formats evidence cards in proper debate style with highlighting, underlining, and strategic text sizing.",
             prompt,
             3000
         );
-        caseOutput.innerHTML = text;
+        
+        const temp = document.createElement("div");
+        temp.innerHTML = html;
+        const cards = temp.querySelectorAll(".debate-card");
+
+        if (cards.length > 8) {
+            caseOutput.innerHTML =
+                Array.from(cards).slice(0, 8).map(c => c.outerHTML).join("") +
+                `<div class="mt-6 text-center">
+                    <p class="text-slate-700 mb-3">Showing 8 of ${cards.length} cards</p>
+                    <button class="bg-slate-900 text-white px-6 py-3 rounded font-semibold hover:bg-slate-800"
+                        onclick='exportCaseToDocx(\`${html.replace(/`/g, '\\`')}\`, "${topic.value.replace(/"/g, '\\"')}"); this.textContent = "Downloaded!"; this.disabled = true;'>
+                        Download Full Case (.docx)
+                    </button>
+                </div>`;
+        } else {
+            caseOutput.innerHTML = html;
+        }
         caseOutput.className = "text-slate-900";
     } catch (err) {
         caseOutput.innerHTML = `<p class="text-red-500">Error: ${err.message}</p>`;
     }
 };
-
-document.getElementById('cardsPerPoint1').onchange = () => {};
-document.getElementById('cardsPerPoint2').onchange = () => {};
 
 console.log("Hamilton initialized successfully!");
 </script>
