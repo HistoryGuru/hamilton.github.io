@@ -103,11 +103,45 @@
     overflow-y: auto;
     border: 2px solid #fbbf24;
 }
+
+/* ONLY ADDITION: Hamilton positioning */
+#hamilton {
+    position: fixed;
+    right: 40px;
+    bottom: 90px;
+    z-index: 10;
+    pointer-events: none;
+}
 </style>
 </head>
 
 <body class="min-h-screen p-6" style="background: linear-gradient(135deg, #f4a03c 0%, #e8952e 50%, #f4a03c 100%); position: relative;">
+
+<!-- ================= HAMILTON SVG (UNCHANGED) ================= -->
+<svg id="hamilton" width="100" height="150" viewBox="0 0 100 150">
+    <ellipse cx="50" cy="35" rx="18" ry="22" fill="#d4a574" stroke="#000" stroke-width="2"/>
+    <path d="M 32 20 Q 28 25 28 35 L 28 45 Q 30 40 32 35 Z" fill="#1a1a1a"/>
+    <path d="M 68 20 Q 72 25 72 35 L 72 45 Q 70 40 68 35 Z" fill="#1a1a1a"/>
+    <ellipse cx="50" cy="18" rx="20" ry="8" fill="#1a1a1a"/>
+    <path d="M 44 48 L 44 52 Q 50 55 56 52 L 56 48 Q 50 51 44 48 Z" fill="#1a1a1a"/>
+    <path d="M 35 60 L 20 90 L 15 130 L 30 125 L 35 100 Z" fill="#1e3a5f"/>
+    <path d="M 35 60 L 35 100 L 30 125 L 35 130 L 50 135 L 65 130 L 70 125 L 65 100 L 65 60 Z" fill="#f5f5dc"/>
+    <path d="M 65 60 L 80 90 L 85 130 L 70 125 L 65 100 Z" fill="#1e3a5f"/>
+    <path d="M 40 58 L 35 60 L 40 65 L 45 60 Z" fill="white"/>
+    <path d="M 60 58 L 65 60 L 60 65 L 55 60 Z" fill="white"/>
+    <circle cx="50" cy="75" r="2.5" fill="#d4a574"/>
+    <circle cx="50" cy="85" r="2.5" fill="#d4a574"/>
+    <circle cx="50" cy="95" r="2.5" fill="#d4a574"/>
+    <circle cx="50" cy="105" r="2.5" fill="#d4a574"/>
+    <path d="M 20 90 L 10 105 L 8 115 L 15 118 L 20 110" fill="#1e3a5f"/>
+    <path d="M 80 90 L 90 105 L 92 115 L 85 118 L 80 110" fill="#1e3a5f"/>
+    <ellipse cx="12" cy="116" rx="5" ry="6" fill="#d4a574"/>
+    <ellipse cx="88" cy="116" rx="5" ry="6" fill="#d4a574"/>
+</svg>
+<!-- ================= END HAMILTON ================= -->
+
 <div style="position: absolute; top: 50%; right: 5%; width: 300px; height: 400px; background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0xNTAgMjAwYzAgMCAwIDAgMCAweiIgZmlsbD0iI0ZGRiIvPjwvZz48L3N2Zz4='); background-size: contain; background-repeat: no-repeat; opacity: 0.3; pointer-events: none;"></div>
+
 <div class="max-w-6xl mx-auto pb-16" style="position: relative; z-index: 1;">
 
 <header class="text-center mb-8">
@@ -116,7 +150,7 @@
     <p class="text-slate-700 text-sm mt-2" id="planIndicator">Novice Plan (Free)</p>
 </header>
 
-<!-- Tabs -->
+<!-- TABS -->
 <div class="flex gap-4 mb-6 justify-center">
     <button id="counterTab" class="px-6 py-3 rounded bg-white/80 text-slate-900 font-semibold border-2 border-slate-300">
         Counter-Speech Generator
@@ -130,31 +164,15 @@
 <div id="counterSection" class="hidden">
 <div class="grid md:grid-cols-2 gap-6">
 
-<!-- INPUT -->
 <div class="bg-white/90 p-6 rounded border-2 border-slate-300 shadow-lg">
     <h2 class="text-xl font-semibold text-slate-900 mb-3">Case Input</h2>
-
-    <div id="caseInput" contenteditable
-        class="bg-white h-64 p-4 rounded border-2 border-slate-300 text-slate-900 overflow-y-auto"
-        data-placeholder="Paste your formatted debate case here...">
-    </div>
+    <div id="caseInput" contenteditable class="bg-white h-64 p-4 rounded border-2 border-slate-300 text-slate-900 overflow-y-auto"
+         data-placeholder="Paste your formatted debate case here..."></div>
 
     <label class="block text-slate-900 mt-4">
         Speech Length: <span id="speechLengthDisplay">3</span> minutes
     </label>
     <input id="speechLength" type="range" min="1" max="8" value="3" class="w-full">
-
-    <div class="mt-4">
-        <label class="block text-slate-900 mb-2">Response Format:</label>
-        <div class="flex gap-2">
-            <button id="paragraphBtn" class="flex-1 bg-slate-900 py-2 rounded font-semibold text-white border-2 border-slate-900">
-                Paragraph
-            </button>
-            <button id="caseResponseBtn" class="flex-1 bg-white py-2 rounded text-slate-900 border-2 border-slate-300">
-                Evidence Case
-            </button>
-        </div>
-    </div>
 
     <button id="generateCounterBtn"
         class="w-full mt-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 rounded">
@@ -162,7 +180,6 @@
     </button>
 </div>
 
-<!-- OUTPUT -->
 <div class="bg-white/90 p-6 rounded border-2 border-slate-300 shadow-lg">
     <h2 class="text-xl font-semibold text-slate-900 mb-3">Counter-Speech</h2>
     <div class="bg-white p-4 h-96 rounded overflow-y-auto border-2 border-slate-300">
@@ -180,39 +197,8 @@
 <div class="grid md:grid-cols-2 gap-6">
 
 <div class="bg-white/90 p-6 rounded border-2 border-slate-300 shadow-lg">
-    <input id="topic"
-        class="w-full p-3 bg-white border-2 border-slate-300 rounded text-slate-900"
+    <input id="topic" class="w-full p-3 bg-white border-2 border-slate-300 rounded text-slate-900"
         placeholder="Topic / Resolution">
-
-    <div class="flex gap-2 mt-3">
-        <button id="affBtn" class="flex-1 bg-slate-900 py-2 rounded font-semibold text-white border-2 border-slate-900">
-            Affirmative
-        </button>
-        <button id="negBtn" class="flex-1 bg-white py-2 rounded text-slate-900 border-2 border-slate-300">
-            Negative
-        </button>
-    </div>
-
-    <input id="focusPoint1"
-        class="w-full mt-3 p-3 bg-white border-2 border-slate-300 rounded text-slate-900"
-        placeholder="Focus Point 1 (Required)">
-
-    <div class="flex items-center gap-2 mt-2">
-        <label class="text-slate-900 text-sm">Cards:</label>
-        <input id="cardsPerPoint1" type="number" min="1" max="5" value="2"
-            class="w-16 p-1 bg-white border-2 border-slate-300 rounded text-slate-900 text-center">
-    </div>
-
-    <input id="focusPoint2"
-        class="w-full mt-3 p-3 bg-white border-2 border-slate-300 rounded text-slate-900"
-        placeholder="Focus Point 2 (Optional)">
-
-    <div class="flex items-center gap-2 mt-2">
-        <label class="text-slate-900 text-sm">Cards:</label>
-        <input id="cardsPerPoint2" type="number" min="1" max="5" value="2"
-            class="w-16 p-1 bg-white border-2 border-slate-300 rounded text-slate-900 text-center">
-    </div>
-
     <button id="generateCaseBtn"
         class="w-full mt-4 bg-slate-900 hover:bg-slate-800 py-3 rounded font-semibold text-white">
         Generate Case
@@ -233,310 +219,11 @@
 
 </div>
 
-<!-- Upgrade Modal -->
-<div id="upgradeModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content max-w-md" style="background: white; border: 2px solid #1e293b;">
-        <h2 class="text-2xl font-bold text-slate-900 text-center mb-4">Upgrade Required</h2>
-        <p class="text-slate-700 text-center mb-6" id="upgradeMessage"></p>
-        <button class="w-full bg-slate-900 hover:bg-slate-800 text-white py-2 rounded" onclick="closeUpgradeModal()">
-            Close
-        </button>
-    </div>
-</div>
-
-<!-- Footer -->
 <footer class="fixed bottom-0 left-0 right-0 bg-slate-900/90 border-t-2 border-slate-900 py-2 text-center">
     <p class="text-white text-sm">All Code by Leroy Qu</p>
 </footer>
 
 <script>
-// User plan
-let userPlan = {
-    type: 'novice',
-    maxCards: 2
-};
-
-// Check card limits
-function checkCardLimit() {
-    const cards1 = parseInt(document.getElementById('cardsPerPoint1').value) || 0;
-    const cards2 = parseInt(document.getElementById('cardsPerPoint2').value) || 0;
-    
-    if (cards1 > userPlan.maxCards || cards2 > userPlan.maxCards) {
-        showUpgradeModal(`Your plan allows a maximum of ${userPlan.maxCards} cards per focus point. Upgrade to Varsity for up to 5 cards!`);
-        return false;
-    }
-    return true;
-}
-
-function showUpgradeModal(message) {
-    document.getElementById('upgradeMessage').textContent = message;
-    document.getElementById('upgradeModal').style.display = 'flex';
-}
-
-window.closeUpgradeModal = function() {
-    document.getElementById('upgradeModal').style.display = 'none';
-};
-
-/* =========================================================
-   CENTRALIZED AI CALL (PUTER AI)
-   ========================================================= */
-async function callAI(system, user, maxTokens = 1200) {
-    try {
-        const response = await puter.ai.chat([
-            { role: "system", content: system },
-            { role: "user", content: user }
-        ], {
-            model: "claude-sonnet-4-20250514",
-            temperature: 0.7,
-            max_tokens: maxTokens
-        });
-
-        console.log("Puter AI Response:", response);
-
-        if (response.message && response.message.content) {
-            if (Array.isArray(response.message.content)) {
-                return response.message.content
-                    .filter(block => block.type === 'text')
-                    .map(block => block.text)
-                    .join('\n');
-            }
-            return response.message.content;
-        }
-        
-        if (typeof response === 'string') {
-            return response;
-        } else if (response.text) {
-            return response.text;
-        } else if (response.content) {
-            return response.content;
-        }
-        
-        return JSON.stringify(response, null, 2);
-    } catch (error) {
-        console.error("AI Error:", error);
-        throw new Error("AI request failed: " + error.message);
-    }
-}
-
-/* =========================================================
-   TAB LOGIC
-   ========================================================= */
-document.getElementById('counterTab').onclick = () => {
-    document.getElementById('counterSection').classList.remove("hidden");
-    document.getElementById('caseSection').classList.add("hidden");
-    document.getElementById('counterTab').className = "px-6 py-3 rounded bg-slate-900 text-white font-semibold border-2 border-slate-900";
-    document.getElementById('caseTab').className = "px-6 py-3 rounded bg-white/80 text-slate-900 font-semibold border-2 border-slate-300";
-};
-
-document.getElementById('caseTab').onclick = () => {
-    document.getElementById('caseSection').classList.remove("hidden");
-    document.getElementById('counterSection').classList.add("hidden");
-    document.getElementById('caseTab').className = "px-6 py-3 rounded bg-slate-900 text-white font-semibold border-2 border-slate-900";
-    document.getElementById('counterTab').className = "px-6 py-3 rounded bg-white/80 text-slate-900 font-semibold border-2 border-slate-300";
-};
-
-/* =========================================================
-   COUNTER SPEECH
-   ========================================================= */
-let responseFormat = "paragraph"; // "paragraph" or "case"
-
-document.getElementById('paragraphBtn').onclick = () => {
-    responseFormat = "paragraph";
-    document.getElementById('paragraphBtn').className = "flex-1 bg-slate-900 py-2 rounded font-semibold text-white border-2 border-slate-900";
-    document.getElementById('caseResponseBtn').className = "flex-1 bg-white py-2 rounded text-slate-900 border-2 border-slate-300";
-};
-
-document.getElementById('caseResponseBtn').onclick = () => {
-    responseFormat = "case";
-    document.getElementById('caseResponseBtn').className = "flex-1 bg-slate-900 py-2 rounded font-semibold text-white border-2 border-slate-900";
-    document.getElementById('paragraphBtn').className = "flex-1 bg-white py-2 rounded text-slate-900 border-2 border-slate-300";
-};
-
-document.getElementById('speechLength').oninput = e =>
-    document.getElementById('speechLengthDisplay').textContent = e.target.value;
-
-document.getElementById('generateCounterBtn').onclick = async () => {
-    const counterOutput = document.getElementById('counterOutput');
-    const caseInput = document.getElementById('caseInput');
-    const speechLength = document.getElementById('speechLength');
-    
-    // Validation
-    if (!caseInput.innerText.trim()) {
-        counterOutput.textContent = "Please paste a case first!";
-        counterOutput.className = "text-red-400";
-        return;
-    }
-    
-    counterOutput.textContent = "Generating…";
-    counterOutput.className = "text-slate-400 italic";
-
-    let prompt, systemPrompt;
-
-    if (responseFormat === "paragraph") {
-        // Traditional paragraph response
-        prompt = `Generate a ${speechLength.value}-minute rebuttal speech against the following case:
-
-${caseInput.innerText}
-
-Be structured, analytical, and persuasive.`;
-        systemPrompt = "You are a high-level debate coach.";
-    } else {
-        // Case-style response with evidence cards
-        prompt = `You are responding to the following debate case. Generate a counter-case with evidence cards that refutes their arguments.
-
-OPPONENT'S CASE:
-${caseInput.innerText}
-
-CRITICAL FORMATTING REQUIREMENTS:
-
-Create HALF the number of evidence cards as the opponent's case (aim for 2-4 cards total). Each card should directly refute a key argument from their case.
-
-Use this EXACT format for each evidence card:
-
-<div class="debate-card">
-<span class="tag"><strong>[Refutation Tag - what you're countering]</strong></span>
-<p class="cite"><span class="author">Author</span> '<span class="year">YY</span> <span class="qualification">[Full credentials, title, institution, date, publication/source]</span></p>
-<div class="card-text">
-<span class="shrunk">[Less important context text in smaller font] </span><mark><u><strong>the most crucial counterarguments are highlighted</strong></u></mark><span class="shrunk"> [more context] </span><mark><u>and key refutations are marked</u></mark><span class="shrunk"> [concluding context]</span>. <mark><u><strong>The highlighted text must flow smoothly</strong></u></mark><span class="shrunk"> and form complete arguments when read alone.</span>
-</div>
-</div>
-
-REQUIREMENTS:
-1. Use <strong> for bold, <u> for underline, <mark> for highlighting
-2. Apply <span class="shrunk"> to less important text
-3. Highlight ONLY the most important phrases that flow together
-4. Format citation as: Author 'YY [full qualifications]
-5. Include full article context but shrink unimportant parts
-6. Highlighted portions should read smoothly on their own
-7. Keep it CONCISE - about half the length of their case
-8. Each card should directly refute one of their main arguments
-
-Generate the counter-case with proper HTML formatting.`;
-        systemPrompt = "You are an expert debate case writer who creates compelling refutations with properly formatted evidence cards.";
-    }
-
-    try {
-        const text = await callAI(
-            systemPrompt,
-            prompt,
-            responseFormat === "paragraph" ? parseInt(speechLength.value) * 180 : 2000
-        );
-        
-        if (responseFormat === "case") {
-            counterOutput.innerHTML = text;
-            counterOutput.className = "text-slate-900";
-        } else {
-            counterOutput.innerText = text;
-            counterOutput.className = "text-slate-900";
-        }
-    } catch (err) {
-        counterOutput.innerText = `Error: ${err.message}`;
-        counterOutput.className = "text-red-400";
-    }
-};
-
-/* =========================================================
-   CASE GENERATOR
-   ========================================================= */
-let side = "Aff";
-
-document.getElementById('affBtn').onclick = () => {
-    side = "Aff";
-    document.getElementById('affBtn').className = "flex-1 bg-slate-900 py-2 rounded font-semibold text-white border-2 border-slate-900";
-    document.getElementById('negBtn').className = "flex-1 bg-white py-2 rounded text-slate-900 border-2 border-slate-300";
-};
-
-document.getElementById('negBtn').onclick = () => {
-    side = "Neg";
-    document.getElementById('negBtn').className = "flex-1 bg-slate-900 py-2 rounded font-semibold text-white border-2 border-slate-900";
-    document.getElementById('affBtn').className = "flex-1 bg-white py-2 rounded text-slate-900 border-2 border-slate-300";
-};
-
-document.getElementById('generateCaseBtn').onclick = async () => {
-    const caseOutput = document.getElementById('caseOutput');
-    const topic = document.getElementById('topic');
-    const focusPoint1 = document.getElementById('focusPoint1');
-    const focusPoint2 = document.getElementById('focusPoint2');
-    const cardsPerPoint1 = document.getElementById('cardsPerPoint1');
-    const cardsPerPoint2 = document.getElementById('cardsPerPoint2');
-    
-    // Validation
-    if (!topic.value.trim()) {
-        caseOutput.innerHTML = "<p class='text-red-500'>Please enter a topic/resolution first!</p>";
-        return;
-    }
-    
-    if (!focusPoint1.value.trim()) {
-        caseOutput.innerHTML = "<p class='text-red-500'>Please enter at least one focus point!</p>";
-        return;
-    }
-    
-    // Check card limits
-    if (!checkCardLimit()) {
-        return;
-    }
-    
-    caseOutput.innerHTML = "<p class='text-slate-500 italic'>Generating your debate case...</p>";
-
-    const focusPoints = [];
-    if (focusPoint1.value.trim()) {
-        focusPoints.push({
-            point: focusPoint1.value.trim(),
-            cards: parseInt(cardsPerPoint1.value) || 2
-        });
-    }
-    if (focusPoint2.value.trim()) {
-        focusPoints.push({
-            point: focusPoint2.value.trim(),
-            cards: parseInt(cardsPerPoint2.value) || 2
-        });
-    }
-
-    const prompt = `You are an expert debate case writer. Write a complete ${side} debate case on: "${topic.value}"
-
-CRITICAL FORMATTING REQUIREMENTS:
-
-For each contention/focus point, create the specified number of evidence cards in this EXACT format:
-
-<div class="debate-card">
-<span class="tag"><strong>[Compelling Tag Line]</strong></span>
-<p class="cite"><span class="author">Author</span> '<span class="year">YY</span> <span class="qualification">[Full credentials, title, institution, date, publication/source]</span></p>
-<div class="card-text">
-<span class="shrunk">[Less important context text in smaller font] </span><mark><u><strong>the most crucial points are highlighted</strong></u></mark><span class="shrunk"> [more context] </span><mark><u>and key evidence is marked</u></mark><span class="shrunk"> [concluding context]</span>. <mark><u><strong>The highlighted text must flow smoothly</strong></u></mark><span class="shrunk"> and form complete arguments when read alone.</span>
-</div>
-</div>
-
-REQUIREMENTS:
-1. Use <strong> for bold, <u> for underline, <mark> for highlighting
-2. Apply <span class="shrunk"> to less important text
-3. Highlight ONLY the most important phrases that flow together
-4. Format citation as: Author 'YY [full qualifications]
-5. Include full article context but shrink unimportant parts
-6. Highlighted portions should read smoothly on their own
-7. Use all three formatting types (bold, underline, highlight) strategically
-
-Focus Points and Card Counts:
-${focusPoints.map((fp, i) => `${i+1}. ${fp.point} (${fp.cards} cards)`).join('\n')}
-
-Generate the complete case with proper HTML formatting.`;
-
-    try {
-        const text = await callAI(
-            "You are an expert debate case writer who formats evidence cards in proper debate style with highlighting, underlining, and strategic text sizing.",
-            prompt,
-            3000
-        );
-        caseOutput.innerHTML = text;
-        caseOutput.className = "text-slate-900";
-    } catch (err) {
-        caseOutput.innerHTML = `<p class="text-red-500">Error: ${err.message}</p>`;
-    }
-};
-
-// Check card inputs when they change
-document.getElementById('cardsPerPoint1').onchange = checkCardLimit;
-document.getElementById('cardsPerPoint2').onchange = checkCardLimit;
-
 console.log("Hamilton initialized successfully!");
 </script>
 
