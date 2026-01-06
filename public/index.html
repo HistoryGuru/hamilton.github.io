@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Hamilton – Intelligent Debate Partner</title>
 
-<script src="https://js.puter.com/v2/"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 
@@ -16,7 +15,6 @@
     font-style: italic;
 }
 
-/* Debate Card Styling */
 .debate-card {
     font-family: 'Times New Roman', serif;
     line-height: 1.6;
@@ -36,28 +34,10 @@
     margin-bottom: 0.3em;
 }
 
-.debate-card .author {
-    font-weight: normal;
-}
-
-.debate-card .year {
-    font-weight: normal;
-}
-
 .debate-card mark {
     background-color: #7dd3fc;
     color: black;
     padding: 0;
-}
-
-.debate-card mark[style*="background-color: white"],
-.debate-card mark[style*="background-color: #fff"],
-.debate-card mark[style*="background-color: #ffffff"],
-.debate-card mark[style*="background: white"],
-.debate-card mark[style*="background: #fff"],
-.debate-card mark[style*="background: #ffffff"] {
-    background-color: transparent !important;
-    background: transparent !important;
 }
 
 .debate-card u {
@@ -72,13 +52,6 @@
     margin-top: 0.5em;
 }
 
-.debate-card .shrunk {
-    font-size: 0.75em;
-    line-height: 1.3;
-    color: #64748b;
-}
-
-/* Hamilton Container */
 #hamilton-container {
     position: fixed;
     right: 40px;
@@ -111,7 +84,6 @@
     50% { transform: translateY(-10px); }
 }
 
-/* Tutorial Overlay */
 #tutorial-overlay {
     position: fixed;
     top: 0;
@@ -164,41 +136,13 @@
     color: #64748b;
     font-style: italic;
 }
-
-/* Modal Overlay */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 20px;
-}
-
-.modal-content {
-    background: white;
-    border-radius: 16px;
-    padding: 32px;
-    max-width: 900px;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-    border: 2px solid #1e293b;
-}
 </style>
 </head>
 
 <body class="min-h-screen p-6" style="background: linear-gradient(135deg, #f4a03c 0%, #e8952e 50%, #f4a03c 100%); position: relative;">
 
-<!-- Hamilton Click Prompt -->
 <div id="hamilton-click-prompt">↓ click here ↓</div>
 
-<!-- Hamilton Container -->
 <div id="hamilton-container">
 <svg id="hamilton" width="100" height="150" viewBox="0 0 100 150">
     <ellipse cx="50" cy="35" rx="18" ry="22" fill="#d4a574" stroke="#000" stroke-width="2"/>
@@ -222,7 +166,6 @@
 </svg>
 </div>
 
-<!-- Tutorial Overlay -->
 <div id="tutorial-overlay">
     <div id="tutorial-spotlight"></div>
 </div>
@@ -236,10 +179,9 @@
 
 <header class="text-center mb-8" id="main-header">
     <h1 class="text-5xl font-bold text-slate-900">Hamilton</h1>
-    <p class="text-slate-800">Intelligent Debate Partner (Powered by Gemini 2.5)</p>
+    <p class="text-slate-800">Intelligent Debate Partner</p>
 </header>
 
-<!-- Tabs -->
 <div class="flex gap-4 mb-6 justify-center">
     <button id="counterTab" class="px-6 py-3 rounded bg-white/80 text-slate-900 font-semibold border-2 border-slate-300">
         Counter-Speech Generator
@@ -249,7 +191,6 @@
     </button>
 </div>
 
-<!-- COUNTER SPEECH -->
 <div id="counterSection" class="hidden">
 <div class="grid md:grid-cols-2 gap-6">
 
@@ -296,7 +237,6 @@
 </div>
 </div>
 
-<!-- CASE WRITER -->
 <div id="caseSection">
 <div class="grid md:grid-cols-2 gap-6">
 
@@ -354,14 +294,13 @@
 
 </div>
 
-<!-- Footer -->
 <footer class="fixed bottom-0 left-0 right-0 bg-slate-900/90 border-t-2 border-slate-900 py-2 text-center">
     <p class="text-white text-sm">All Code by Leroy Qu</p>
 </footer>
 
 <script>
-/* GEMINI AI INTEGRATION */
-async function callAI(systemPrompt, userPrompt, maxTokens) {
+/* AI CALL USING CLAUDE API */
+async function callAI(system, user, maxTokens) {
     try {
         const response = await fetch("https://api.anthropic.com/v1/messages", {
             method: "POST",
@@ -369,11 +308,11 @@ async function callAI(systemPrompt, userPrompt, maxTokens) {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                model: "gemini-2.0-flash-exp",
+                model: "claude-sonnet-4-20250514",
                 max_tokens: maxTokens,
-                system: systemPrompt,
+                system: system,
                 messages: [
-                    { role: "user", content: userPrompt }
+                    { role: "user", content: user }
                 ],
             })
         });
@@ -533,21 +472,17 @@ document.getElementById('generateCounterBtn').onclick = async () => {
         return;
     }
     
-    counterOutput.textContent = "Generating with Gemini 2.5…";
+    counterOutput.textContent = "Generating…";
     counterOutput.className = "text-slate-400 italic";
 
-    const systemPrompt = responseFormat === "paragraph"
-        ? "You are a high-level debate coach specializing in competitive debate. Generate structured, analytical, and persuasive rebuttals."
-        : "You are an expert debate case writer who creates properly formatted evidence cards with HTML markup, proper citations, highlighting, and [Cut by Hamilton Debate-LQ] tags.";
-
-    const userPrompt = responseFormat === "paragraph"
+    const prompt = responseFormat === "paragraph"
         ? "Generate a "+speechLength.value+"-minute rebuttal speech against:\n\n"+caseInput.innerText+"\n\nBe structured, analytical, and persuasive."
         : "Generate a counter-case with evidence cards refuting:\n\n"+caseInput.innerText+"\n\nUse proper HTML formatting with debate-card class, highlighting, and [Cut by Hamilton Debate-LQ] tags.";
 
     try {
         const text = await callAI(
-            systemPrompt,
-            userPrompt,
+            responseFormat==="paragraph"?"You are a high-level debate coach.":"You are an expert debate case writer.",
+            prompt,
             responseFormat==="paragraph"?parseInt(speechLength.value)*180:2000
         );
         if (responseFormat==="case") {
@@ -612,7 +547,7 @@ document.getElementById('generateCaseBtn').onclick = async () => {
     ];
     
     const randomFact = debateFacts[Math.floor(Math.random() * debateFacts.length)];
-    caseOutput.innerHTML = "<p class='text-slate-700'><strong>🔄 Loading with Gemini 2.5... Fun Fact:</strong> " + randomFact + "</p>";
+    caseOutput.innerHTML = "<p class='text-slate-700'><strong>🔄 Loading... Fun Fact:</strong> " + randomFact + "</p>";
 
     const focusPoints = [];
     if (focusPoint1.value.trim()) {
@@ -623,7 +558,35 @@ document.getElementById('generateCaseBtn').onclick = async () => {
     }
 
     const totalCards = focusPoints.reduce((sum,fp)=>sum+fp.cards,0);
-    
-    const systemPrompt = "You are an expert debate case writer who specializes in creating unique, well-researched evidence cards with complete citations including URLs. Output ONLY the debate-card HTML divs with no additional text before or after.";
-    
-    const userPrompt = "Write a "+side+" debate case on: "+topic.value+"\n\nCreate EXACTLY "+totalCards+" UNIQUE evidence cards total (NO DUPLICATES). Each card MUST have a different argument and different source.\n\nFocus Points:\n"+focusPoints.map((fp,i)=>(i+1)+". "+fp.point+" ("+fp.cards+" unique cards with DIFFERENT sources)").join("\n")+"\n\nCRITICAL: You must generate EXACTLY "+totalCards+" cards - no more, no less. Each must be complete and unique.\n\nIMPORTANT: DO NOT repeat any sources, authors, or arguments. Each card must be completely distinct.\n\nFor each card:\n- Include a clear tag line wrapped in <div class='tag'>TAG HERE</div>\n- Include FULL citation wrapped in <div class='cite'>CITATION HERE [Cut by Hamilton Debate-LQ]</div> with author name, year, credentials/publication, article title, URL, and ending with [Cut by Hamilton Debate-LQ]\n- Include evidence text wrapped in <div class='card-text'>EVIDENCE HERE</div> (NO [Cut by Hamilton Debate-LQ] here)\n- Use <mark> tags for highlighting key phrases (NOT ** symbols)\n- Use <strong> tags for bold text  \n- Use <u> tags for
+    const prompt = "Write a "+side+" debate case on: "+topic.value+"\n\nCreate EXACTLY "+totalCards+" UNIQUE evidence cards total (NO DUPLICATES). Each card MUST have a different argument and different source.\n\nFocus Points:\n"+focusPoints.map((fp,i)=>(i+1)+". "+fp.point+" ("+fp.cards+" unique cards with DIFFERENT sources)").join("\n")+"\n\nCRITICAL: You must generate EXACTLY "+totalCards+" cards - no more, no less. Each must be complete and unique.\n\nIMPORTANT: DO NOT repeat any sources, authors, or arguments. Each card must be completely distinct.\n\nFor each card:\n- Include a clear tag line wrapped in <div class='tag'>TAG HERE</div>\n- Include FULL citation wrapped in <div class='cite'>CITATION HERE [Cut by Hamilton Debate-LQ]</div> with author name, year, credentials/publication, article title, URL, and ending with [Cut by Hamilton Debate-LQ]\n- Include evidence text wrapped in <div class='card-text'>EVIDENCE HERE</div> (NO [Cut by Hamilton Debate-LQ] here)\n- Use <mark> tags for highlighting key phrases (NOT ** symbols)\n- Use <strong> tags for bold text  \n- Use <u> tags for underlined text\n- Wrap each complete card in <div class='debate-card'>...</div>\n- DO NOT include any text outside the debate-card divs\n- DO NOT include any commentary, introductions, or explanations\n\nExample format:\n<div class='debate-card'>\n  <div class='tag'>Nuclear accidents cause catastrophic long-term contamination</div>\n  <div class='cite'>Steinberg '21 (Mark Steinberg, Nuclear Safety Engineer) \"Fukushima's Lasting Legacy\" Nuclear Safety Quarterly https://www.example.com [Cut by Hamilton Debate-LQ]</div>\n  <div class='card-text'>The <mark><strong>Fukushima disaster demonstrates that nuclear accidents create contamination zones lasting centuries</strong></mark>. Even ten years after the meltdown, <u>radiation levels in the exclusion zone remain dangerously high</u>, forcing permanent evacuation of entire communities.</div>\n</div>\n\nVerify: Output EXACTLY "+totalCards+" complete debate-card divs with no extra text.";
+
+    try {
+        let attemptCount = 0;
+        let uniqueCards = [];
+        
+        while (attemptCount < 3 && uniqueCards.length !== totalCards) {
+            attemptCount++;
+            console.log("Attempt", attemptCount, "- Requesting", totalCards, "cards");
+            
+            const html = await callAI("You are an expert debate case writer. Create unique, non-duplicate evidence cards with complete citations including URLs. Output ONLY the debate-card HTML divs with no additional text before or after.",prompt,4000);
+            
+            const temp = document.createElement("div");
+            temp.innerHTML = html;
+            
+            const allNodes = Array.from(temp.childNodes);
+            allNodes.forEach(node => {
+                if (node.nodeType === Node.TEXT_NODE || !node.classList?.contains('debate-card')) {
+                    node.remove();
+                }
+            });
+            
+            const cards = temp.querySelectorAll(".debate-card");
+            uniqueCards = [];
+            const seenAuthors = new Set();
+            const seenTags = new Set();
+            
+            console.log("Raw cards found:", cards.length);
+            
+            cards.forEach((card, idx) => {
+                const tag = card.querySelector(".tag")?.innerText || "";
+                const
